@@ -96,14 +96,14 @@ feat: add KV persistence and server actions for game management
 
 ### Tasks
 
-- [ ] Create Pusher account, configure app
-- [ ] `src/lib/pusher/server.ts` — Pusher server client
-- [ ] `src/lib/pusher/client.ts` — Pusher browser client (singleton)
-- [ ] `src/app/api/pusher/auth/route.ts` — Presence channel auth
-- [ ] Integrate Pusher events into Server Actions (publish after KV update)
-- [ ] `src/hooks/use-game-state.ts` — Subscribe to Pusher, merge with React state
-- [ ] `src/hooks/use-player-session.ts` — UUID from cookie
-- [ ] `src/hooks/use-table.ts` — Table metadata (polling fallback)
+- [x] Create Pusher account, configure app
+- [x] `src/lib/pusher/server.ts` — Pusher server client
+- [x] `src/lib/pusher/client.ts` — Pusher browser client (singleton)
+- [x] `src/app/api/pusher/auth/route.ts` — Presence channel auth
+- [x] Integrate Pusher events into Server Actions (publish after KV update)
+- [x] `src/hooks/use-game-state.ts` — Subscribe to Pusher, merge with React state
+- [x] `src/hooks/use-player-session.ts` — UUID from cookie
+- [x] `src/hooks/use-table.ts` — Table metadata (polling fallback)
 
 ### Pusher Events to implement
 - `game:state-update`, `game:player-hand`, `game:action`
