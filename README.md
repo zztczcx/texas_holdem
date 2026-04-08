@@ -1,8 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Texas Hold'em Online
 
-## Getting Started
+Multiplayer Texas Hold'em poker in your browser. No account required — just share a link.
 
-First, run the development server:
+Built with **Next.js 16 App Router**, **TypeScript**, **Pusher** (real-time), and **Upstash Redis** (game state).
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- [Upstash Redis](https://console.upstash.com/redis) account (free tier works)
+- [Pusher Channels](https://dashboard.pusher.com) account (free sandbox works)
+
+### Setup
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Copy env vars and fill in your credentials
+cp .env.example .env.local
+# Edit .env.local with your Upstash and Pusher keys
+
+# 3. Run the dev server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to play.
+
+---
+
+## How to Play
+
+1. **Create a table** — click "Create Table", enter your name, configure settings
+2. **Share the link** — copy the table URL and send it to friends
+3. **Start the game** — host clicks "Start Game" when all players have joined
+4. **Play** — Fold, Check, Call, or Raise each round
+
+---
+
+## Tech Stack
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS v4 |
+| Real-time | Pusher Channels (presence + private) |
+| State | Upstash Redis (3h TTL, atomic locks) |
+| Testing | Vitest + Testing Library + Playwright |
+| Deployment | Vercel |
+
+---
+
+## Development
+
+```bash
+npm run dev          # start dev server
+npm run build        # production build
+npm run lint         # ESLint
+npm test -- --run    # unit + integration + component tests (128 tests)
+npm run test:e2e     # Playwright E2E (requires running server + real env vars)
+npx tsc --noEmit     # TypeScript type check
+```
+
+### Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages & API routes
+│   ├── (home)/             # Landing / lobby pages
+│   ├── (game)/table/[id]/  # Game table page
+│   ├── api/                # REST + Pusher auth endpoints
+│   └── actions.ts          # Server Actions (create/join/play)
+├── components/
+│   ├── ui/                 # Buttons, inputs, modals, toasts
+│   ├── game/               # Table, seats, cards, action bar
+│   └── layout/             # Header, page wrapper
+├── lib/
+│   ├── game/               # Pure poker engine (deck, evaluator, state machine)
+│   ├── db/                 # Upstash Redis KV helpers
+│   └── pusher/             # Pusher server + client singletons
+├── hooks/                  # useGameState, usePlayerSession, useTable
+└── types/                  # game.ts, api.ts
+```
+
+---
+
+## Deployment (Vercel)
+
+1. Push to GitHub
+2. Import the repo in [Vercel](https://vercel.com)
+3. Add environment variables from `.env.example` in the Vercel dashboard
+4. Deploy — Vercel auto-builds on every push
+
+---
+
+## Environment Variables
+
+See [`.env.example`](.env.example) for the full list. Required:
+
+- `KV_REST_API_URL` + `KV_REST_API_TOKEN` — Upstash Redis
+- `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — rate limiting (can reuse same instance)
+- `PUSHER_APP_ID` + `PUSHER_KEY` + `PUSHER_SECRET` + `PUSHER_CLUSTER`
+- `NEXT_PUBLIC_PUSHER_KEY` + `NEXT_PUBLIC_PUSHER_CLUSTER`
+
 
 ```bash
 npm run dev

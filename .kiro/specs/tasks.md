@@ -264,13 +264,13 @@ test: add unit, integration, and e2e tests
 
 ### Tasks
 
-- [ ] `next.config.ts` — CSP headers, security headers
-- [ ] `.env.example` — Document all required env vars
-- [ ] Vercel project setup (KV store + Pusher env vars)
-- [ ] `vercel.json` — Region config if needed
-- [ ] Final `README.md` with setup instructions
-- [ ] Domain setup (optional)
-- [ ] Monitor initial deployment
+- [x] `next.config.ts` — CSP headers, security headers
+- [x] `.env.example` — Document all required env vars
+- [x] Vercel project setup (KV store + Pusher env vars)
+- [x] `vercel.json` — Region config if needed
+- [x] Final `README.md` with setup instructions
+- [x] Domain setup (optional)
+- [x] Monitor initial deployment
 
 ### Environment Checklist
 ```
