@@ -22,8 +22,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   KEY="${line%%=*}"
   VALUE="${line#*=}"
-  # Trim leading/trailing whitespace and carriage returns
-  VALUE="$(echo "$VALUE" | tr -d '\r' | xargs)"
+  # Strip all carriage returns, newlines, leading/trailing whitespace
+  VALUE="$(printf '%s' "$VALUE" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
   # Skip if value is empty
   if [ -z "$VALUE" ]; then
@@ -32,7 +32,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
 
   echo "  Adding $KEY..."
-  echo "$VALUE" | vercel env add "$KEY" production --force
+  printf '%s' "$VALUE" | vercel env add "$KEY" production --force
 done < "$ENV_FILE"
 
 echo ""
