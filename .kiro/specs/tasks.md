@@ -27,25 +27,25 @@
 
 ### Tasks
 
-- [ ] `src/types/game.ts` — Define all game types (Card, Suit, Rank, GameState, Player, etc.)
-- [ ] `src/types/api.ts` — Define API request/response types and Zod schemas
-- [ ] `src/lib/game/deck.ts` — `createDeck()`, `shuffle()`, `dealCards()`
-- [ ] `src/lib/game/hand-evaluator.ts` — `evaluateHand()`, `compareHands()`, `getBestHand()`
+- [x] `src/types/game.ts` — Define all game types (Card, Suit, Rank, GameState, Player, etc.)
+- [x] `src/types/api.ts` — Define API request/response types and Zod schemas
+- [x] `src/lib/game/deck.ts` — `createDeck()`, `shuffle()`, `dealCards()`
+- [x] `src/lib/game/hand-evaluator.ts` — `evaluateHand()`, `compareHands()`, `getBestHand()`
   - High Card, Pair, Two Pair, Three of a Kind
   - Straight (including A-2-3-4-5 wheel)
   - Flush, Full House, Four of a Kind
   - Straight Flush, Royal Flush
   - Kicker comparison
-- [ ] `src/lib/game/betting.ts` — `getValidActions()`, `getCallAmount()`, `applyBet()`
-- [ ] `src/lib/game/game-state.ts` — `createGameState()`, `applyAction()`, `determineWinners()`
-- [ ] `src/lib/utils/cn.ts` — `clsx` + `tailwind-merge` helper
-- [ ] `src/lib/utils/nanoid.ts` — Table ID generation (6-char)
+- [x] `src/lib/game/betting.ts` — `getValidActions()`, `getCallAmount()`, `applyBet()`
+- [x] `src/lib/game/game-state.ts` — `createGameState()`, `applyAction()`, `determineWinners()`
+- [x] `src/lib/utils/cn.ts` — `clsx` + `tailwind-merge` helper
+- [x] `src/lib/utils/nanoid.ts` — Table ID generation (6-char)
 
 ### Unit Tests
-- [ ] `deck.test.ts` — shuffle distribution, deal correctness
-- [ ] `hand-evaluator.test.ts` — all hand ranks, kicker tiebreaks, split pots
-- [ ] `betting.test.ts` — valid actions, all-in side pots, raise limits
-- [ ] `game-state.test.ts` — full hand simulation
+- [x] `deck.test.ts` — shuffle distribution, deal correctness
+- [x] `hand-evaluator.test.ts` — all hand ranks, kicker tiebreaks, split pots
+- [x] `betting.test.ts` — valid actions, all-in side pots, raise limits
+- [x] `game-state.test.ts` — full hand simulation
 
 ### Commit
 ```
