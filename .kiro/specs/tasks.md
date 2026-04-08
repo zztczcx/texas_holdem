@@ -217,17 +217,17 @@ feat: add game table UI with player seats, cards, and action controls
 
 ### Tasks
 
-- [ ] Showdown reveal sequence (flip cards one by one with delay)
-- [ ] Hand result display for each player at showdown
-- [ ] Winner highlight + chip award animation
-- [ ] "Next Hand" button / auto-advance (5-second countdown)
-- [ ] Player elimination UI (out of chips notification)
-- [ ] Buy-back modal (if enabled)
-- [ ] Game end screen (final standings, chip counts, winner celebration)
-- [ ] Turn timer — visual ring, auto-action on expiry
-- [ ] Reconnection handling UI (grayed-out seat, "reconnecting..." indicator)
-- [ ] Sit-out feature
-- [ ] Toast notifications (player joined/left, game started, etc.)
+- [x] Showdown reveal sequence (flip cards one by one with delay)
+- [x] Hand result display for each player at showdown
+- [x] Winner highlight + chip award animation
+- [x] "Next Hand" button / auto-advance (5-second countdown)
+- [x] Player elimination UI (out of chips notification)
+- [x] Buy-back modal (if enabled)
+- [x] Game end screen (final standings, chip counts, winner celebration)
+- [x] Turn timer — visual ring, auto-action on expiry
+- [x] Reconnection handling UI (grayed-out seat, "reconnecting..." indicator)
+- [x] Sit-out feature
+- [x] Toast notifications (player joined/left, game started, etc.)
 
 ### Commit
 ```

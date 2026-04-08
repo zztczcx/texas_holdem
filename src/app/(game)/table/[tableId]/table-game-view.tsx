@@ -1,12 +1,17 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Table } from '@/types/game';
 import { Header } from '@/components/layout/header';
 import { PokerTable } from '@/components/game/poker-table';
 import { ActionBar } from '@/components/game/action-bar';
+import { ShowdownOverlay } from '@/components/game/showdown-overlay';
+import { GameEndScreen } from '@/components/game/game-end-screen';
+import { TurnTimer } from '@/components/game/turn-timer';
+import { ToastContainer, useToast } from '@/components/ui/toast';
 import { useGameState } from '@/hooks/use-game-state';
-import { performAction } from '@/app/actions';
+import { performAction, endHand, buyBack } from '@/app/actions';
 import type { ActionType } from '@/types/game';
 
 interface TableGameViewProps {
@@ -18,20 +23,21 @@ interface TableGameViewProps {
  * The in-game view: poker table with live Pusher state + action bar.
  */
 export function TableGameView({ table: initialTable, currentPlayerId }: TableGameViewProps): React.ReactElement {
+  const router = useRouter();
   const [, startTransition] = useTransition();
+  const { toasts, addToast, dismissToast } = useToast();
 
   const initialGameState = initialTable.gameState
     ? { ...initialTable.gameState, deck: null as null }
     : null;
 
-  const { gameState } = useGameState(
+  const { gameState, handEndResult } = useGameState(
     initialTable.id,
     currentPlayerId,
     initialGameState,
   );
 
   const liveGameState = gameState;
-
   const currentPlayer = currentPlayerId ? initialTable.players[currentPlayerId] : null;
 
   const isMyTurn =
@@ -40,17 +46,54 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     currentPlayer.seatIndex === liveGameState.currentSeatIndex &&
     currentPlayer.status === 'active';
 
+  const isGameEnded = initialTable.state === 'ended';
+  const isShowdown = liveGameState?.stage === 'showdown';
+
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
     if (!currentPlayerId) return;
     startTransition(async () => {
-      await performAction(initialTable.id, currentPlayerId, {
+      const result = await performAction(initialTable.id, currentPlayerId, {
         type,
         playerId: currentPlayerId,
         amount,
         timestamp: Date.now(),
       });
+      if (result.error) {
+        addToast({ message: result.error, variant: 'danger' });
+      }
     });
   }
+
+  async function handleNextHand(): Promise<void> {
+    startTransition(async () => {
+      const result = await endHand(initialTable.id);
+      if (result.error) {
+        addToast({ message: result.error, variant: 'danger' });
+      } else {
+        router.refresh();
+      }
+    });
+  }
+
+  async function handleBuyBack(): Promise<void> {
+    if (!currentPlayerId) return;
+    const result = await buyBack(initialTable.id, currentPlayerId);
+    if (result.error) {
+      addToast({ message: result.error, variant: 'danger' });
+    } else {
+      addToast({ message: 'Bought back in!', variant: 'success' });
+    }
+  }
+
+  function handleTimerExpire(): void {
+    // Auto-fold on turn expiry
+    void handleAction('fold');
+    addToast({ message: 'Time out — you were automatically folded.', variant: 'danger' });
+  }
+
+  const playerNames = Object.fromEntries(
+    Object.values(initialTable.players).map((p) => [p.id, p.name]),
+  );
 
   if (!liveGameState) {
     return (
@@ -67,6 +110,17 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     <>
       <Header />
       <main className="min-h-screen flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-4 md:px-6">
+        {/* Turn timer (top of page when it's your turn) */}
+        {isMyTurn && initialTable.settings.turnTimerSeconds > 0 && (
+          <div className="flex justify-center mb-2">
+            <TurnTimer
+              totalSeconds={initialTable.settings.turnTimerSeconds}
+              isActive={!!isMyTurn}
+              onExpire={handleTimerExpire}
+            />
+          </div>
+        )}
+
         <PokerTable
           players={initialTable.players}
           gameState={liveGameState}
@@ -87,6 +141,33 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
           </div>
         )}
       </main>
+
+      {/* Showdown overlay */}
+      {(isShowdown || handEndResult) && handEndResult && (
+        <ShowdownOverlay
+          result={handEndResult}
+          playerNames={playerNames}
+          allowBuyBack={initialTable.settings.allowBuyBack}
+          currentPlayerId={currentPlayerId}
+          currentPlayerChips={currentPlayer?.chips ?? 0}
+          onNextHand={() => void handleNextHand()}
+          onBuyBack={handleBuyBack}
+        />
+      )}
+
+      {/* Game end screen */}
+      {isGameEnded && (
+        <GameEndScreen
+          players={initialTable.players}
+          winnerPlayerId={
+            Object.values(initialTable.players).find((p) => p.chips > 0)?.id ?? null
+          }
+          tableId={initialTable.id}
+        />
+      )}
+
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   );
 }
