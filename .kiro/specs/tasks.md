@@ -135,26 +135,26 @@ feat: add Pusher real-time integration for live game updates
 ### Tasks
 
 **Design tokens & globals**
-- [ ] Update `src/app/globals.css` with CSS custom properties (all color tokens)
-- [ ] Update `tailwind.config.ts` with custom colors, fonts, border-radius scale
-- [ ] Install `clsx`, `tailwind-merge`
+- [x] Update `src/app/globals.css` with CSS custom properties (all color tokens)
+- [x] Update `tailwind.config.ts` with custom colors, fonts, border-radius scale
+- [x] Install `clsx`, `tailwind-merge`
 
 **UI Components**
-- [ ] `src/components/ui/button.tsx` — Primary, Secondary, Danger, Gold variants
-- [ ] `src/components/ui/input.tsx` — Dark themed input
-- [ ] `src/components/ui/badge.tsx` — Status badges
-- [ ] `src/components/ui/modal.tsx` — Dialog with backdrop
-- [ ] `src/components/ui/slider.tsx` — Raise amount slider
-- [ ] `src/components/layout/header.tsx` — Logo + nav
-- [ ] `src/components/layout/page-container.tsx`
+- [x] `src/components/ui/button.tsx` — Primary, Secondary, Danger, Gold variants
+- [x] `src/components/ui/input.tsx` — Dark themed input
+- [x] `src/components/ui/badge.tsx` — Status badges
+- [x] `src/components/ui/modal.tsx` — Dialog with backdrop
+- [x] `src/components/ui/slider.tsx` — Raise amount slider
+- [x] `src/components/layout/header.tsx` — Logo + nav
+- [x] `src/components/layout/page-container.tsx`
 
 **Pages**
-- [ ] `src/app/(home)/page.tsx` — Landing page
+- [x] `src/app/(home)/page.tsx` — Landing page
   - Hero: "Play Texas Hold'em with Friends"
   - "Create Table" button → opens settings modal
   - "Join Table" input + button
-- [ ] `src/app/(home)/layout.tsx`
-- [ ] `src/app/(game)/table/[tableId]/page.tsx` — Pre-game lobby view
+- [x] `src/app/(home)/layout.tsx`
+- [x] `src/app/(game)/table/[tableId]/page.tsx` — Pre-game lobby view
   - Player list (waiting state)
   - Settings form (host editable)
   - Share link + copy button

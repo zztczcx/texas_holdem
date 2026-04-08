@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/* ── Poker Design System — Color Tokens ─────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary surfaces */
+  --color-felt: #2d6a4f;
+  --color-felt-dark: #1a3d2b;
+  --color-canvas: #0d1b12;
+
+  /* Text */
+  --color-text-primary: #f0ede8;
+  --color-text-muted: #a89f96;
+  --color-text-on-light: #2c1810;
+
+  /* Accent */
+  --color-gold: #d4af37;
+  --color-gold-hover: #c49b28;
+
+  /* Suit colors */
+  --color-suit-red: #c0392b;
+  --color-suit-dark: #1a1a2e;
+
+  /* Semantic */
+  --color-danger: #e63946;
+  --color-success: #2d9e6b;
+  --color-warning: #f4a261;
+
+  /* Interactive focus */
+  --color-focus: #4361ee;
+
+  /* Surfaces & borders */
+  --color-surface: #14261a;
+  --color-border: #3d5e4a;
+  --color-border-muted: #2a4035;
+
+  /* Cards */
+  --color-card-bg: #ffffff;
+  --color-card-back: #1e3a5f;
+
+  /* --- Legacy aliases ---  */
+  --background: var(--color-canvas);
+  --foreground: var(--color-text-primary);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue,
+    Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ── Base styles ────────────────────────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue,
+    Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numbers for chip/pot amounts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
