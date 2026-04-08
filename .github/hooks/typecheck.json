@@ -1,0 +1,7 @@
+{
+  "event": "PostToolUse",
+  "run": ".github/hooks/scripts/ts-check.sh",
+  "matcher": {
+    "toolName": "str_replace_in_file|replace_str_in_file|write_file|create_file|edit_file|multi_replace_str_in_file"
+  }
+}

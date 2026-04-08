@@ -182,6 +182,50 @@ chore: [tooling/config change]
 
 ---
 
+## Autonomous Workflow Protocol
+
+**The agent must follow this protocol without requiring human prompts between stages.**
+
+### Before Starting Any Stage
+1. Read `.kiro/specs/tasks.md` to identify the current incomplete stage
+2. Mark the stage tasks as in-progress in the todo list
+3. Read all relevant reference docs for the stage (`docs/references/`, `.kiro/specs/design.md`)
+4. Check `npm run build` passes before starting (do not start on a broken codebase)
+
+### During a Stage
+- Use `manage_todo_list` to track granular task progress
+- Write tests alongside implementation (not after)
+- After every significant file edit, verify TypeScript compiles: `npx tsc --noEmit`
+- If TypeScript errors appear, fix them immediately — do not continue to the next file
+
+### Completing a Stage (MANDATORY CHECKLIST)
+Before marking a stage done and committing, ALL of the following must pass:
+1. `npx tsc --noEmit` — zero TypeScript errors
+2. `npm run lint` — zero ESLint errors
+3. Stage-specific tests pass: `npm test -- --run` (Vitest)
+4. Mark all stage tasks as `completed` in `.kiro/specs/tasks.md` (replace `[ ]` with `[x]`)
+
+### Git Commit After Every Stage (REQUIRED)
+After a stage passes all checks:
+```bash
+git add -A
+git commit -m "<type>: <description>"
+```
+Commit types: `feat` (new feature), `fix` (bug fix), `spec` (spec update), `chore` (config), `test` (tests), `docs` (docs)
+
+**Never skip the commit.** Every stage ends with a commit. This is not optional.
+
+### Stage Progression
+After committing a stage, immediately begin the next incomplete stage from `.kiro/specs/tasks.md`.
+Continue until all stages are complete. Do not wait for human input between stages.
+
+### Error Recovery
+- If `npm run build` fails: fix TypeScript errors first, do not move on
+- If tests fail: fix the code, not the tests (unless the test itself is wrong)
+- If a stage dependency is missing: implement it inline or as a utility, then continue
+
+---
+
 ## References
 
 - Next.js docs: `node_modules/next/dist/docs/`

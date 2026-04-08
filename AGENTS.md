@@ -29,3 +29,23 @@ Before writing any code for this project:
 - Pusher server: `src/lib/pusher/server.ts`
 - Pusher client: `src/lib/pusher/client.ts`
 - Game engine: `src/lib/game/`
+
+---
+
+## Autonomous Execution Protocol
+
+**Run stages continuously without waiting for human input.**
+
+1. Check `.kiro/specs/tasks.md` — find the first stage with unchecked `[ ]` items
+2. Mark the stage in-progress on your todo list
+3. Read all referenced docs for the stage before writing code
+4. Verify `npm run build` is clean before starting
+5. After completing a stage, run the mandatory checklist:
+   - `npx tsc --noEmit` — zero errors
+   - `npm run lint` — zero errors
+   - `npm test -- --run` — all pass
+6. Mark all stage tasks `[x]` in `.kiro/specs/tasks.md`
+7. Run `git add -A && git commit -m "<type>: <description>"`
+8. Immediately proceed to the next `not-started` stage — do NOT stop
+
+**Never ask for confirmation between stages. Never skip the git commit.**
