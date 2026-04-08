@@ -60,20 +60,20 @@ feat: add core poker game engine with unit tests
 
 ### Tasks
 
-- [ ] Configure `@vercel/kv` (or `ioredis` with env vars)
-- [ ] `src/lib/db/kv.ts` — KV client, `getTable()`, `setTable()`, `acquireLock()`
-- [ ] `src/lib/utils/validate.ts` — Zod schemas for all Server Action inputs
-- [ ] `src/app/actions.ts` — Implement all Server Actions:
+- [x] Configure `@vercel/kv` (or `ioredis` with env vars)
+- [x] `src/lib/db/kv.ts` — KV client, `getTable()`, `setTable()`, `acquireLock()`
+- [x] `src/lib/utils/validate.ts` — Zod schemas for all Server Action inputs
+- [x] `src/app/actions.ts` — Implement all Server Actions:
   - `createTable(settings, hostName)`
   - `joinTable(tableId, playerName)`
   - `startGame(tableId, playerId)`
   - `performAction(tableId, playerId, action)`
   - `buyBack(tableId, playerId)`
   - `kickPlayer(tableId, hostId, targetPlayerId)`
-- [ ] `src/app/api/table/[tableId]/route.ts` — GET public table info
-- [ ] `src/app/api/table/[tableId]/state/route.ts` — GET filtered game state
-- [ ] Session cookie management (`src/lib/utils/session.ts`)
-- [ ] Rate limiting setup (`@upstash/ratelimit`)
+- [x] `src/app/api/table/[tableId]/route.ts` — GET public table info
+- [x] `src/app/api/table/[tableId]/state/route.ts` — GET filtered game state
+- [x] Session cookie management (`src/lib/utils/session.ts`)
+- [x] Rate limiting setup (`@upstash/ratelimit`)
 
 ### Environment Variables (add to `.env.local`)
 ```
