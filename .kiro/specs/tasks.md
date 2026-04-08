@@ -175,34 +175,34 @@ feat: add lobby page and table creation UI
 ### Tasks
 
 **Game Components**
-- [ ] `src/components/game/playing-card.tsx` — Face-up card (suit symbol + rank)
-- [ ] `src/components/game/card-back.tsx` — Face-down card with pattern
-- [ ] `src/components/game/poker-table.tsx` — Oval felt table with seat positions
-- [ ] `src/components/game/player-seat.tsx`
+- [x] `src/components/game/playing-card.tsx` — Face-up card (suit symbol + rank)
+- [x] `src/components/game/card-back.tsx` — Face-down card with pattern
+- [x] `src/components/game/poker-table.tsx` — Oval felt table with seat positions
+- [x] `src/components/game/player-seat.tsx`
   - Avatar circle (initials or icon)
   - Name, chip count, current-round bet
   - Dealer button (D), SB, BB labels
   - Turn indicator ring (animated timer)
   - Folded state (cards face down)
   - All-in indicator
-- [ ] `src/components/game/community-cards.tsx` — 5-slot community card display
-- [ ] `src/components/game/pot-display.tsx` — Pot + side pots
-- [ ] `src/components/game/action-bar.tsx` — Action buttons for active player
-- [ ] `src/components/game/raise-slider.tsx` — Slider with min/max/all-in shortcuts
-- [ ] `src/components/game/chip-stack.tsx` — Visual chip representation
-- [ ] `src/components/game/hand-result.tsx` — "Full House, Kings over Jacks"
+- [x] `src/components/game/community-cards.tsx` — 5-slot community card display
+- [x] `src/components/game/pot-display.tsx` — Pot + side pots
+- [x] `src/components/game/action-bar.tsx` — Action buttons for active player
+- [x] `src/components/game/raise-slider.tsx` — Slider with min/max/all-in shortcuts
+- [x] `src/components/game/chip-stack.tsx` — Visual chip representation
+- [x] `src/components/game/hand-result.tsx` — "Full House, Kings over Jacks"
 
 **Game Table Page (full game state)**
-- [ ] Update `src/app/(game)/table/[tableId]/page.tsx` with:
+- [x] Update `src/app/(game)/table/[tableId]/page.tsx` with:
   - Game table layout (poker-table component)
   - Real-time Pusher subscription via hooks
   - Conditional render: lobby vs. game state
 
 **Animations (CSS/Framer Motion)**
-- [ ] Card deal animation (cards slide from deck position)
-- [ ] Chip movement on bet/win
-- [ ] Timer ring countdown
-- [ ] Pot award animation
+- [x] Card deal animation (cards slide from deck position)
+- [x] Chip movement on bet/win
+- [x] Timer ring countdown
+- [x] Pot award animation
 
 ### Commit
 ```

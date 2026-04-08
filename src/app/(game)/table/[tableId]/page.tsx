@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTable } from '@/lib/db/kv';
 import { getSessionId } from '@/lib/utils/session';
 import { TableLobby } from './table-lobby';
+import { TableGameView } from './table-game-view';
 
 interface TablePageProps {
   params: Promise<{ tableId: string }>;
@@ -27,6 +28,16 @@ export default async function TablePage({ params }: TablePageProps): Promise<Rea
     sessionId
       ? Object.values(table.players).find((p) => p.sessionId === sessionId)?.id ?? null
       : null;
+
+  // Show game view when game is in progress
+  if (table.state === 'playing' && table.gameState) {
+    return (
+      <TableGameView
+        table={table}
+        currentPlayerId={currentPlayerId}
+      />
+    );
+  }
 
   return (
     <TableLobby
