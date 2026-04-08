@@ -242,14 +242,14 @@ feat: add showdown, game end flow, and gameplay polish
 
 ### Tasks
 
-- [ ] Install `vitest` + `@testing-library/react`
-- [ ] Configure `vitest.config.ts`
-- [ ] Unit tests: game engine (Stage 2 tests formalized)
-- [ ] Integration tests: Server Actions with KV mock
-- [ ] Component tests: `playing-card`, `action-bar`, `player-seat`
-- [ ] E2E: Playwright — full game flow (2-player game from lobby to showdown)
-- [ ] Accessibility audit: keyboard navigation, color contrast
-- [ ] Performance: Lighthouse audit, bundle size check
+- [x] Install `vitest` + `@testing-library/react`
+- [x] Configure `vitest.config.ts`
+- [x] Unit tests: game engine (Stage 2 tests formalized)
+- [x] Integration tests: Server Actions with KV mock
+- [x] Component tests: `playing-card`, `action-bar`, `player-seat`
+- [x] E2E: Playwright — full game flow (2-player game from lobby to showdown)
+- [x] Accessibility audit: keyboard navigation, color contrast
+- [x] Performance: Lighthouse audit, bundle size check
 
 ### Commit
 ```
