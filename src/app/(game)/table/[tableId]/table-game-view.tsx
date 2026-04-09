@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useEffect } from 'react';
+import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Table } from '@/types/game';
 import { Header } from '@/components/layout/header';
@@ -54,14 +54,6 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
   const isGameEnded = initialTable.state === 'ended';
   const isShowdown = liveGameState?.stage === 'showdown';
-
-  // When the hand ends (performAction auto-finalizes hands now), refresh server data
-  // so the table re-renders with the latest player chip counts and next hand state.
-  useEffect(() => {
-    if (handEndResult) {
-      router.refresh();
-    }
-  }, [handEndResult, router]);
 
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
     if (!currentPlayerId) return;

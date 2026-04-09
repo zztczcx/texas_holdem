@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 export interface TurnTimerProps {
@@ -21,6 +21,14 @@ export interface TurnTimerProps {
 export function TurnTimer({ totalSeconds, isActive, onExpire, className }: TurnTimerProps): React.ReactElement {
   const [remaining, setRemaining] = useState(totalSeconds);
 
+  // Keep a stable ref to onExpire so the expiry effect never needs it as a dep.
+  // This prevents infinite loops when the parent re-renders (creating a new function ref)
+  // while the timer is already at zero.
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  });
+
   // Countdown + reset — setState only inside timer callbacks, never synchronously in body
   useEffect(() => {
     if (!isActive) return;
@@ -36,12 +44,14 @@ export function TurnTimer({ totalSeconds, isActive, onExpire, className }: TurnT
     };
   }, [isActive, totalSeconds]);
 
-  // Fire expiry callback separately to avoid side effects inside setState updater
+  // Fire expiry callback when remaining hits zero.
+  // onExpireRef is NOT in deps — the ref update effect above keeps it current without
+  // causing this effect to re-run on every parent render.
   useEffect(() => {
     if (isActive && remaining === 0) {
-      onExpire?.();
+      onExpireRef.current?.();
     }
-  }, [isActive, remaining, onExpire]);
+  }, [isActive, remaining]);
 
   const percent = Math.max(0, remaining / totalSeconds);
   const isWarning = remaining <= 10;
