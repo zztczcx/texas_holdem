@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Channel } from 'pusher-js';
 import { getPusherClient } from '@/lib/pusher/client';
 import type { PlayerHandPayload } from '@/lib/pusher/server';
@@ -34,6 +34,9 @@ export function useGameState(
   const [handEndResult, setHandEndResult] = useState<HandEndResult | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Ref so Pusher callbacks always see the latest hole cards without stale closure issues
+  const holeCardsRef = useRef<PlayerHandPayload['holeCards'] | null>(null);
+
   const subscribe = useCallback(() => {
     if (!tableId) return;
 
@@ -52,7 +55,24 @@ export function useGameState(
     });
 
     tableChannel.bind('game:state-update', (state: FilteredGameState) => {
-      setGameState(state);
+      // Re-inject the current player's hole cards — public broadcasts intentionally
+      // strip them to preserve security; the private channel is the source of truth.
+      setGameState(() => {
+        const cards = holeCardsRef.current;
+        if (cards && playerId) {
+          return {
+            ...state,
+            playerHands: {
+              ...state.playerHands,
+              [playerId]: {
+                ...(state.playerHands[playerId] ?? {}),
+                holeCards: cards,
+              },
+            },
+          };
+        }
+        return state;
+      });
     });
 
     tableChannel.bind('game:action', (action: PlayerAction) => {
@@ -61,11 +81,17 @@ export function useGameState(
 
     tableChannel.bind('game:hand-end', (result: HandEndResult) => {
       setHandEndResult(result);
+      // Clear stale hole cards; new hand will deliver fresh ones via private channel
+      holeCardsRef.current = null;
+      setMyHoleCards(null);
     });
 
     tableChannel.bind('game:started', () => {
       setHandEndResult(null);
       setLastAction(null);
+      // Clear hole cards on start — private channel delivers them right after
+      holeCardsRef.current = null;
+      setMyHoleCards(null);
     });
 
     let privateChannel: Channel | null = null;
@@ -77,7 +103,22 @@ export function useGameState(
 
       privateChannel.bind('game:player-hand', (payload: PlayerHandPayload) => {
         if (payload.playerId === playerId) {
+          holeCardsRef.current = payload.holeCards;
           setMyHoleCards(payload.holeCards);
+          // Immediately merge into the current game state so the table re-renders
+          setGameState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              playerHands: {
+                ...prev.playerHands,
+                [playerId]: {
+                  ...(prev.playerHands[playerId] ?? {}),
+                  holeCards: payload.holeCards,
+                },
+              },
+            };
+          });
         }
       });
     }

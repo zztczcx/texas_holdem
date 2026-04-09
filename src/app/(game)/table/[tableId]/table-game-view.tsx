@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Table } from '@/types/game';
 import { Header } from '@/components/layout/header';
@@ -38,16 +38,30 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   );
 
   const liveGameState = gameState;
-  const currentPlayer = currentPlayerId ? initialTable.players[currentPlayerId] : null;
 
+  // Use live player data from game state where possible, fall back to initial snapshot.
+  // The live players record is embedded in initialTable and refreshed on router.refresh().
+  const livePlayers = initialTable.players;
+  const currentPlayer = currentPlayerId ? livePlayers[currentPlayerId] ?? null : null;
+
+  // A player's turn: their seat matches the current seat in the live game state,
+  // and they are active (not folded/allIn/sitOut/disconnected).
   const isMyTurn =
-    currentPlayer &&
-    liveGameState &&
+    !!currentPlayer &&
+    !!liveGameState &&
     currentPlayer.seatIndex === liveGameState.currentSeatIndex &&
     currentPlayer.status === 'active';
 
   const isGameEnded = initialTable.state === 'ended';
   const isShowdown = liveGameState?.stage === 'showdown';
+
+  // When the hand ends (performAction auto-finalizes hands now), refresh server data
+  // so the table re-renders with the latest player chip counts and next hand state.
+  useEffect(() => {
+    if (handEndResult) {
+      router.refresh();
+    }
+  }, [handEndResult, router]);
 
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
     if (!currentPlayerId) return;
@@ -66,6 +80,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
   async function handleNextHand(): Promise<void> {
     startTransition(async () => {
+      // endHand is now a no-op when performAction already finalized the hand.
       const result = await endHand(initialTable.id);
       if (result.error) {
         addToast({ message: result.error, variant: 'danger' });
@@ -109,7 +124,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   return (
     <>
       <Header />
-      <main className="min-h-screen flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-4 md:px-6">
+      <main className="min-h-screen flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-2 sm:py-4 sm:px-4 md:px-6">
         {/* Turn timer (top of page when it's your turn) */}
         {isMyTurn && initialTable.settings.turnTimerSeconds > 0 && (
           <div className="flex justify-center mb-2">
@@ -122,7 +137,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
         )}
 
         <PokerTable
-          players={initialTable.players}
+          players={livePlayers}
           gameState={liveGameState}
           settings={initialTable.settings}
           currentPlayerId={currentPlayerId}
@@ -131,7 +146,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
         {/* Action bar — only shown to the active player on their turn */}
         {isMyTurn && currentPlayer && (
-          <div className="mt-4 max-w-md mx-auto w-full px-2">
+          <div className="mt-3 sm:mt-4 max-w-md mx-auto w-full px-1 sm:px-2">
             <ActionBar
               player={currentPlayer}
               gameState={liveGameState}

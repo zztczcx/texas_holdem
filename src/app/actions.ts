@@ -18,8 +18,8 @@ import {
 } from '../lib/db/kv';
 import { getOrCreateSessionId } from '../lib/utils/session';
 import { generateTableId } from '../lib/utils/nanoid';
-import { createGameState, determineWinners, computeHandEnd, applyAction } from '../lib/game/game-state';
-import { assertIsHost, assertPlayerInTable, applyWinnings, filterGameStateForPlayer } from '../lib/game/state-filter';
+import { createGameState, determineWinners, computeHandEnd, applyAction, advanceStage } from '../lib/game/game-state';
+import { assertIsHost, assertPlayerInTable, filterGameStateForPlayer } from '../lib/game/state-filter';
 import {
   publishPlayerJoined,
   publishGameStarted,
@@ -29,7 +29,7 @@ import {
   publishHandEnd,
   publishPlayerLeft,
 } from '../lib/pusher/server';
-import type { GameSettings, Player, PlayerAction, Table } from '../types/game';
+import type { GameSettings, GameState, Player, PlayerAction, Table, TableState } from '../types/game';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -245,29 +245,174 @@ export async function performAction(
       return { error: (e as Error).message };
     }
 
-    let newGameState;
+    let newGameState: GameState;
     try {
       newGameState = applyAction(table.gameState, player, parsed.data.action);
     } catch (e) {
       return { error: (e as Error).message };
     }
 
+    // ── Update player status and chips based on action ──────────────────────
+    const newPlayers: Record<string, Player> = { ...table.players };
+    const betBefore = table.gameState.bettingRound.bets[player.id] ?? 0;
+    const betAfter = newGameState.bettingRound.bets[player.id] ?? 0;
+    const betPaid = betAfter - betBefore;
+
+    switch (parsed.data.action.type) {
+      case 'fold':
+        newPlayers[player.id] = { ...player, status: 'folded' };
+        break;
+      case 'allIn':
+        newPlayers[player.id] = { ...player, chips: 0, status: 'allIn' };
+        break;
+      case 'call':
+      case 'raise':
+        if (betPaid > 0) {
+          newPlayers[player.id] = { ...player, chips: Math.max(0, player.chips - betPaid) };
+        }
+        break;
+    }
+
+    // ── Derive active player sets ───────────────────────────────────────────
+    const allPlayers = Object.values(newPlayers);
+
+    const activePlayers = allPlayers
+      .filter((p) => p.status !== 'folded' && p.status !== 'disconnected' && p.status !== 'sitOut')
+      .sort((a, b) => a.seatIndex - b.seatIndex);
+
+    // Players who can still place bets (active + not all-in)
+    const canActPlayers = activePlayers.filter((p) => p.status !== 'allIn');
+
+    // Next seat clockwise from fromSeat within a player pool
+    function nextSeatIn(fromSeat: number, pool: Player[]): number {
+      if (pool.length === 0) return fromSeat;
+      const seats = pool.map((p) => p.seatIndex);
+      return seats.find((s) => s > fromSeat) ?? seats[0]!;
+    }
+
+    // First to act post-flop: leftmost active player after dealer
+    function firstToActPostFlop(): number {
+      return nextSeatIn(newGameState.dealerSeatIndex, activePlayers);
+    }
+
+    // ── Determine round / stage outcome ─────────────────────────────────────
+    const instantWin = activePlayers.length === 1;
+
+    // Round complete when all can-act players have acted with equal bets
+    const everyoneActed =
+      canActPlayers.length === 0 ||
+      canActPlayers.every((p) => newGameState.bettingRound.actedPlayers.has(p.id));
+
+    const roundComplete = instantWin || everyoneActed;
+
+    const NEXT_STAGE: Partial<Record<string, string>> = {
+      'pre-flop': 'flop',
+      'flop': 'turn',
+      'turn': 'river',
+      'river': 'showdown',
+    };
+
+    if (roundComplete) {
+      const nextStage = instantWin
+        ? 'showdown'
+        : (NEXT_STAGE[newGameState.stage] ?? 'showdown');
+
+      newGameState = advanceStage(newGameState, nextStage as typeof newGameState.stage);
+
+      if (nextStage !== 'showdown') {
+        // Post-flop: first active player after dealer acts first
+        newGameState = { ...newGameState, currentSeatIndex: firstToActPostFlop() };
+      }
+
+      // ── Showdown / hand end ─────────────────────────────────────────────
+      if (newGameState.stage === 'showdown') {
+        const winners = determineWinners(newGameState, newPlayers);
+        const handEnd = computeHandEnd(newGameState, newPlayers, winners);
+
+        // Award winnings — bets already deducted incrementally above
+        const withWinnings: Record<string, Player> = {};
+        for (const [id, p] of Object.entries(newPlayers)) {
+          withWinnings[id] = { ...p, status: 'active' };
+        }
+        for (const winner of winners) {
+          const p = withWinnings[winner.playerId];
+          if (p) withWinnings[winner.playerId] = { ...p, chips: p.chips + winner.amount };
+        }
+
+        // Remove bust players (0 chips, no buy-back)
+        const surviving: Record<string, Player> = {};
+        for (const [id, p] of Object.entries(withWinnings)) {
+          if (p.chips > 0 || table.settings.allowBuyBack) {
+            surviving[id] = p;
+          }
+        }
+
+        const remaining = Object.values(surviving).filter((p) => p.chips > 0);
+        const nextTableState: TableState = remaining.length < 2 ? 'ended' : 'playing';
+
+        // Start next hand if game continues
+        let nextGameState = null;
+        if (nextTableState === 'playing' && remaining.length >= 2) {
+          const newDealerSeat = nextSeatIn(
+            newGameState.dealerSeatIndex,
+            Object.values(surviving).filter((p) => p.chips > 0),
+          );
+          nextGameState = createGameState(
+            surviving,
+            table.settings,
+            newDealerSeat,
+            newGameState.handNumber + 1,
+          );
+        }
+
+        const finalTable: Table = {
+          ...table,
+          state: nextTableState,
+          players: surviving,
+          gameState: nextGameState,
+          updatedAt: Date.now(),
+        };
+
+        await setTable(finalTable);
+        await publishPusherAction(tableId, parsed.data.action).catch(() => null);
+        await publishHandEnd(tableId, handEnd).catch(() => null);
+
+        // Publish next hand state and private hole cards
+        if (nextGameState) {
+          const publicNextState = filterGameStateForPlayer(nextGameState, null);
+          await publishStateUpdate(tableId, publicNextState).catch(() => null);
+          for (const p of Object.values(surviving)) {
+            const hand = nextGameState.playerHands[p.id];
+            if (hand) {
+              await publishPlayerHand(p.id, { playerId: p.id, holeCards: hand.holeCards }).catch(() => null);
+            }
+          }
+        }
+
+        return {};
+      }
+    } else {
+      // Advance turn to next player who can act
+      const nextPool = canActPlayers.length > 0 ? canActPlayers : activePlayers;
+      newGameState = { ...newGameState, currentSeatIndex: nextSeatIn(player.seatIndex, nextPool) };
+    }
+
     const updatedTable: Table = {
       ...table,
       gameState: newGameState,
+      players: newPlayers,
       updatedAt: Date.now(),
     };
 
     await setTable(updatedTable);
-
-    // Broadcast the action and updated (filtered) state to all players
     await publishPusherAction(tableId, parsed.data.action).catch(() => null);
-    // Broadcast a generic public state (no hole cards) to all
+    // Broadcast public state (no hole cards — clients retain their own from private channel)
     const publicState = filterGameStateForPlayer(newGameState, null);
     await publishStateUpdate(tableId, publicState).catch(() => null);
 
     return {};
-  } catch {
+  } catch (e) {
+    console.error('performAction error:', e);
     return { error: 'Failed to perform action. Please try again.' };
   } finally {
     await releaseLock(lock);
@@ -384,7 +529,12 @@ import type { HandEndResult } from '../types/game';
 
 /**
  * Finalize a hand: determine winners, award chips, reset for next hand.
- * Called internally after all betting is complete.
+ *
+ * NOTE: performAction now handles hand finalization atomically when the river
+ * betting round completes. This function is kept as a safety fallback for any
+ * hands that reach showdown stage without having been finalized (e.g. legacy
+ * state in Redis). When performAction has already finalized the hand the table
+ * will no longer be at stage 'showdown', so this returns immediately.
  */
 export async function endHand(tableId: string): Promise<ActionResult<HandEndResult>> {
   const lock = await acquireLock(tableId).catch(() => null);
@@ -392,32 +542,43 @@ export async function endHand(tableId: string): Promise<ActionResult<HandEndResu
 
   try {
     const table = await getTable(tableId);
-    if (!table || !table.gameState) return { error: 'No active game found.' };
+    if (!table) return { error: 'Table not found.' };
+
+    // If the hand was already finalized by performAction (stage advanced past showdown
+    // or gameState reset to next hand / null), acknowledge success without re-running.
+    if (!table.gameState || table.gameState.stage !== 'showdown') {
+      return {};
+    }
 
     const winners = determineWinners(table.gameState, table.players);
     const handEnd = computeHandEnd(table.gameState, table.players, winners);
 
-    // Apply winnings (deduct round bets, award pot winnings)
-    const bets = table.gameState.bettingRound.bets;
-    const updatedPlayers = applyWinnings(table.players, bets, winners);
+    // Award winnings only — bets were already deducted incrementally in performAction
+    const withWinnings: Record<string, Player> = {};
+    for (const [id, p] of Object.entries(table.players)) {
+      withWinnings[id] = { ...p, status: 'active' };
+    }
+    for (const winner of winners) {
+      const p = withWinnings[winner.playerId];
+      if (p) withWinnings[winner.playerId] = { ...p, chips: p.chips + winner.amount };
+    }
 
-    // Remove players with 0 chips who can't buy back
-    const activePlayers: typeof updatedPlayers = {};
-    for (const [id, player] of Object.entries(updatedPlayers)) {
-      if (player.chips > 0 || table.settings.allowBuyBack) {
-        activePlayers[id] = { ...player, status: 'active' };
+    // Remove bust players (0 chips, no buy-back)
+    const surviving: Record<string, Player> = {};
+    for (const [id, p] of Object.entries(withWinnings)) {
+      if (p.chips > 0 || table.settings.allowBuyBack) {
+        surviving[id] = p;
       }
     }
 
-    // Check if game should end (fewer than 2 players remaining)
-    const remaining = Object.values(activePlayers).filter((p) => p.chips > 0);
-    const tableState = remaining.length < 2 ? 'ended' : 'playing';
+    const remaining = Object.values(surviving).filter((p) => p.chips > 0);
+    const tableState: typeof table.state = remaining.length < 2 ? 'ended' : 'playing';
 
     const updatedTable: Table = {
       ...table,
       state: tableState,
-      players: activePlayers,
-      gameState: tableState === 'ended' ? null : null, // Reset for next hand
+      players: surviving,
+      gameState: null,
       updatedAt: Date.now(),
     };
 
