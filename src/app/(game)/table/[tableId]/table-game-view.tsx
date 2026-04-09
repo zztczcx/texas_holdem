@@ -106,7 +106,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     return (
       <>
         <Header />
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex-1 min-h-0 flex items-center justify-center">
           <p className="text-[var(--color-text-muted)] text-lg">Loading game...</p>
         </div>
       </>
@@ -116,7 +116,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   return (
     <>
       <Header />
-      <main className="min-h-screen flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-2 sm:py-4 sm:px-4 md:px-6">
+      <main className="flex-1 min-h-0 flex flex-col items-stretch bg-[var(--color-canvas)] overflow-hidden px-2 py-2 sm:py-4 sm:px-4 md:px-6">
         {/* Turn timer (top of page when it's your turn) */}
         {isMyTurn && initialTable.settings.turnTimerSeconds > 0 && (
           <div className="flex justify-center mb-2">
@@ -128,13 +128,16 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
           </div>
         )}
 
-        <PokerTable
-          players={livePlayers}
-          gameState={liveGameState}
-          settings={initialTable.settings}
-          currentPlayerId={currentPlayerId}
-          className="flex-1"
-        />
+        {/* Poker table — grows to fill remaining space, constrained to viewport */}
+        <div className="flex-1 min-h-0 flex items-center justify-center">
+          <PokerTable
+            players={livePlayers}
+            gameState={liveGameState}
+            settings={initialTable.settings}
+            currentPlayerId={currentPlayerId}
+            className="max-h-full"
+          />
+        </div>
 
         {/* Action bar — only shown to the active player on their turn */}
         {isMyTurn && currentPlayer && (

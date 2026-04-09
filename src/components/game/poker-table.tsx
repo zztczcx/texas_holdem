@@ -60,7 +60,7 @@ export const PokerTable = memo(function PokerTable({
   return (
     <div
       aria-label="Poker table"
-      className={cn('relative w-full aspect-[3/2] max-h-[55vh] sm:max-h-[70vh]', className)}
+      className={cn('relative w-full aspect-[3/2] max-h-full', className)}
     >
       {/* Table felt */}
       <div
