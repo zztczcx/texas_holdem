@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Table } from '@/types/game';
 import { Header } from '@/components/layout/header';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { joinTable, startGame } from '@/app/actions';
 import { useTable } from '@/hooks/use-table';
+import { getPusherClient } from '@/lib/pusher/client';
 
 interface TableLobbyProps {
   table: Table;
@@ -25,6 +26,28 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
   const liveTable = table ?? initialTable;
 
   const [playerId, setPlayerId] = useState(initialPlayerId);
+
+  // Subscribe to Pusher so we instantly navigate to the game when it starts.
+  // The lobby doesn't need full game state — just the game:started signal.
+  useEffect(() => {
+    const pusher = getPusherClient();
+    const channelName = `presence-table-${initialTable.id}`;
+    const channel = pusher.subscribe(channelName);
+    channel.bind('game:started', () => {
+      router.refresh();
+    });
+    return () => {
+      channel.unbind('game:started');
+      pusher.unsubscribe(channelName);
+    };
+  }, [initialTable.id, router]);
+
+  // Polling fallback: if we detect state === 'playing' via HTTP poll, refresh the page.
+  useEffect(() => {
+    if (liveTable.state === 'playing') {
+      router.refresh();
+    }
+  }, [liveTable.state, router]);
 
   // Join form state (shown if the viewer is not yet a player)
   const [playerName, setPlayerName] = useState('');

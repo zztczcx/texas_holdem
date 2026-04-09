@@ -47,6 +47,21 @@ export function useGameState(
   // Ref so Pusher callbacks always see the latest hole cards without stale closure issues
   const holeCardsRef = useRef<PlayerHandPayload['holeCards'] | null>(null);
 
+  // Seed hole cards from the server-rendered initial state.
+  // Without this, the first game:state-update (which strips hole cards for security)
+  // would overwrite the server-rendered cards before the private-channel event arrives.
+  useEffect(() => {
+    if (playerId && initialState && !holeCardsRef.current) {
+      const hand = initialState.playerHands[playerId];
+      if (hand?.holeCards) {
+        holeCardsRef.current = hand.holeCards;
+        setMyHoleCards(hand.holeCards);
+      }
+    }
+    // Only run once on mount — deps intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const subscribe = useCallback(() => {
     if (!tableId) return;
 
