@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { Player, GameState } from '@/types/game';
 import { CardBack } from './card-back';
@@ -32,7 +33,7 @@ const ROLE_CLASSES: Record<'dealer' | 'sb' | 'bb', string> = {
  * A single player seat on the poker table — shows avatar, name, chips,
  * hole cards, role badges, and active/folded state.
  */
-export function PlayerSeat({
+export const PlayerSeat = memo(function PlayerSeat({
   player,
   gameState,
   role,
@@ -134,4 +135,4 @@ export function PlayerSeat({
       </div>
     </article>
   );
-}
+});

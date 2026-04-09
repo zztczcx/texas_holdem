@@ -24,29 +24,29 @@ interface TableGameViewProps {
  */
 export function TableGameView({ table: initialTable, currentPlayerId }: TableGameViewProps): React.ReactElement {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const { toasts, addToast, dismissToast } = useToast();
 
   const initialGameState = initialTable.gameState
     ? { ...initialTable.gameState, deck: null as null }
     : null;
 
-  const { gameState, handEndResult } = useGameState(
+  const { gameState, livePlayers, handEndResult } = useGameState(
     initialTable.id,
     currentPlayerId,
     initialGameState,
+    initialTable.players,
   );
 
   const liveGameState = gameState;
 
-  // Use live player data from game state where possible, fall back to initial snapshot.
-  // The live players record is embedded in initialTable and refreshed on router.refresh().
-  const livePlayers = initialTable.players;
-  const currentPlayer = currentPlayerId ? livePlayers[currentPlayerId] ?? null : null;
+  // Use live player data broadcast via Pusher (falls back to initial server render)
+  const currentPlayer = currentPlayerId ? (livePlayers[currentPlayerId] ?? null) : null;
 
-  // A player's turn: their seat matches the current seat in the live game state,
-  // and they are active (not folded/allIn/sitOut/disconnected).
+  // It's our turn when: our seat is current AND we are still active AND no action is pending.
+  // isPending gates double-submission while a server action is in-flight.
   const isMyTurn =
+    !isPending &&
     !!currentPlayer &&
     !!liveGameState &&
     currentPlayer.seatIndex === liveGameState.currentSeatIndex &&
@@ -56,7 +56,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   const isShowdown = liveGameState?.stage === 'showdown';
 
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
-    if (!currentPlayerId) return;
+    if (!currentPlayerId || isPending) return;
     startTransition(async () => {
       const result = await performAction(initialTable.id, currentPlayerId, {
         type,
@@ -99,7 +99,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   }
 
   const playerNames = Object.fromEntries(
-    Object.values(initialTable.players).map((p) => [p.id, p.name]),
+    Object.values(livePlayers).map((p) => [p.id, p.name]),
   );
 
   if (!liveGameState) {

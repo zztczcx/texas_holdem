@@ -4,12 +4,19 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Channel } from 'pusher-js';
 import { getPusherClient } from '@/lib/pusher/client';
 import type { PlayerHandPayload } from '@/lib/pusher/server';
-import type { GameState, PlayerAction, HandEndResult } from '@/types/game';
+import type { GameState, Player, PlayerAction, HandEndResult } from '@/types/game';
 
 type FilteredGameState = Omit<GameState, 'deck'> & { deck: null };
 
+// Shape of the game:state-update Pusher event (new format includes players)
+interface TableStateUpdatePayload {
+  gameState: FilteredGameState;
+  players: Record<string, Player>;
+}
+
 export interface GameStateData {
   gameState: FilteredGameState | null;
+  livePlayers: Record<string, Player>;
   myHoleCards: PlayerHandPayload['holeCards'] | null;
   lastAction: PlayerAction | null;
   handEndResult: HandEndResult | null;
@@ -22,13 +29,16 @@ export interface GameStateData {
  * @param tableId  - The table to subscribe to
  * @param playerId - The current player's ID (or null if spectating)
  * @param initialState - Optional server-rendered initial game state
+ * @param initialPlayers - Optional server-rendered initial players
  */
 export function useGameState(
   tableId: string | null,
   playerId: string | null,
   initialState?: FilteredGameState | null,
+  initialPlayers?: Record<string, Player>,
 ): GameStateData {
   const [gameState, setGameState] = useState<FilteredGameState | null>(initialState ?? null);
+  const [livePlayers, setLivePlayers] = useState<Record<string, Player>>(initialPlayers ?? {});
   const [myHoleCards, setMyHoleCards] = useState<PlayerHandPayload['holeCards'] | null>(null);
   const [lastAction, setLastAction] = useState<PlayerAction | null>(null);
   const [handEndResult, setHandEndResult] = useState<HandEndResult | null>(null);
@@ -43,7 +53,6 @@ export function useGameState(
     const pusher = getPusherClient();
     const tableChannelName = `presence-table-${tableId}`;
 
-    // Subscribe to the public presence channel for game state broadcasts
     const tableChannel: Channel = pusher.subscribe(tableChannelName);
 
     tableChannel.bind('pusher:subscription_succeeded', () => {
@@ -54,7 +63,14 @@ export function useGameState(
       setIsConnected(false);
     });
 
-    tableChannel.bind('game:state-update', (state: FilteredGameState) => {
+    tableChannel.bind('game:state-update', (payload: TableStateUpdatePayload) => {
+      const { gameState: state, players } = payload;
+
+      // Update live players when provided
+      if (players && Object.keys(players).length > 0) {
+        setLivePlayers(players);
+      }
+
       // Re-inject the current player's hole cards — public broadcasts intentionally
       // strip them to preserve security; the private channel is the source of truth.
       setGameState(() => {
@@ -139,5 +155,5 @@ export function useGameState(
     return cleanup ?? undefined;
   }, [subscribe]);
 
-  return { gameState, myHoleCards, lastAction, handEndResult, isConnected };
+  return { gameState, livePlayers, myHoleCards, lastAction, handEndResult, isConnected };
 }

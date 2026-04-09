@@ -35,6 +35,11 @@ export function tableChannel(tableId: string): string {
 
 export type FilteredGameState = ReturnType<typeof filterGameStateForPlayer>;
 
+export interface TableStateUpdatePayload {
+  gameState: FilteredGameState;
+  players: Record<string, Player>;
+}
+
 export interface PlayerHandPayload {
   playerId: string;
   holeCards: GameState['playerHands'][string]['holeCards'];
@@ -55,14 +60,17 @@ export interface PlayerLeftPayload {
 // ── Publish helpers ───────────────────────────────────────────────────────────
 
 /**
- * Broadcast the filtered public game state to all players in the channel.
+ * Broadcast the filtered public game state + player data to all in the channel.
+ * Sending players here (status, chips) avoids clients relying on stale server-render data.
  */
 export async function publishStateUpdate(
   tableId: string,
   state: FilteredGameState,
+  players: Record<string, Player> = {},
 ): Promise<void> {
   const pusher = getPusherServer();
-  await pusher.trigger(tableChannel(tableId), 'game:state-update', state);
+  const payload: TableStateUpdatePayload = { gameState: state, players };
+  await pusher.trigger(tableChannel(tableId), 'game:state-update', payload);
 }
 
 /**

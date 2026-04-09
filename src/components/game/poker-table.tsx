@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { Player, GameState, GameSettings, Table } from '@/types/game';
 import { PlayerSeat } from './player-seat';
@@ -19,13 +20,21 @@ export interface PokerTableProps {
  * - Bottom: current player (seat 0 from their POV)
  * - Left + top + right: opponents
  */
-export function PokerTable({
+export const PokerTable = memo(function PokerTable({
   players,
   gameState,
   currentPlayerId,
   className,
 }: PokerTableProps): React.ReactElement {
-  const playerList = Object.values(players).sort((a, b) => a.seatIndex - b.seatIndex);
+  const playerList = useMemo(
+    () => Object.values(players).sort((a, b) => a.seatIndex - b.seatIndex),
+    [players],
+  );
+
+  const currentPlayerIndex = useMemo(
+    () => playerList.findIndex((p) => p.id === currentPlayerId),
+    [playerList, currentPlayerId],
+  );
 
   // Determine roles per player
   function getRole(player: Player): 'dealer' | 'sb' | 'bb' | null {
@@ -35,19 +44,14 @@ export function PokerTable({
     return null;
   }
 
-  // Position seats around an oval: positions are percentage-based (top/left)
-  // For up to 9 seats, we compute evenly-spaced positions around an ellipse.
   const n = playerList.length;
   function seatPosition(i: number): { top: string; left: string } {
-    // Rotate so current player is at the bottom-center (angle = 90° = π/2)
-    const currentPlayerIndex = playerList.findIndex((p) => p.id === currentPlayerId);
     const offset = currentPlayerIndex >= 0 ? currentPlayerIndex : 0;
     const angle = ((i - offset) / n) * 2 * Math.PI + Math.PI / 2;
-    // Ellipse radii (in % of container)
-    const rx = 42; // horizontal
-    const ry = 36; // vertical
-    const cx = 50; // center x
-    const cy = 50; // center y
+    const rx = 42;
+    const ry = 36;
+    const cx = 50;
+    const cy = 50;
     const x = cx + rx * Math.cos(angle);
     const y = cy + ry * Math.sin(angle);
     return { top: `${y}%`, left: `${x}%` };
@@ -105,6 +109,6 @@ export function PokerTable({
       })}
     </div>
   );
-}
+});
 
 export type { Table };

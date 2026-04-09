@@ -231,6 +231,7 @@ export async function performAction(
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };
 
+  let lockReleased = false;
   try {
     const table = await getTable(tableId);
     if (!table) return { error: 'Table not found.' };
@@ -374,13 +375,17 @@ export async function performAction(
         };
 
         await setTable(finalTable);
+        // Release lock BEFORE slow Pusher network calls so concurrent requests aren't blocked
+        await releaseLock(lock);
+        lockReleased = true;
+
         await publishPusherAction(tableId, parsed.data.action).catch(() => null);
         await publishHandEnd(tableId, handEnd).catch(() => null);
 
         // Publish next hand state and private hole cards
         if (nextGameState) {
           const publicNextState = filterGameStateForPlayer(nextGameState, null);
-          await publishStateUpdate(tableId, publicNextState).catch(() => null);
+          await publishStateUpdate(tableId, publicNextState, surviving).catch(() => null);
           for (const p of Object.values(surviving)) {
             const hand = nextGameState.playerHands[p.id];
             if (hand) {
@@ -405,17 +410,21 @@ export async function performAction(
     };
 
     await setTable(updatedTable);
+    // Release lock BEFORE Pusher calls
+    await releaseLock(lock);
+    lockReleased = true;
+
     await publishPusherAction(tableId, parsed.data.action).catch(() => null);
-    // Broadcast public state (no hole cards — clients retain their own from private channel)
+    // Broadcast public state (no hole cards) + live player data
     const publicState = filterGameStateForPlayer(newGameState, null);
-    await publishStateUpdate(tableId, publicState).catch(() => null);
+    await publishStateUpdate(tableId, publicState, newPlayers).catch(() => null);
 
     return {};
   } catch (e) {
     console.error('performAction error:', e);
     return { error: 'Failed to perform action. Please try again.' };
   } finally {
-    await releaseLock(lock);
+    if (!lockReleased) await releaseLock(lock);
   }
 }
 
