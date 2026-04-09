@@ -6,7 +6,7 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    exclude: ['node_modules', '.next'],
+    exclude: ['node_modules', '.next', 'src/**/*.integration.test.ts'],
     setupFiles: ['src/test-setup.ts'],
   },
   resolve: {

@@ -120,8 +120,14 @@ export function applyBet(
 
   const validTypes = validActions.map((a) => a.type);
   if (!validTypes.includes(action.type)) {
+    const playerBetThisRound = state.bettingRound.bets[player.id] ?? 0;
+    const diagCallAmount = Math.max(0, state.currentBet - playerBetThisRound);
     throw new Error(
-      `Invalid action "${action.type}" for player ${player.id} in stage "${state.stage}"`,
+      `Invalid action "${action.type}" for player ${player.id} in stage "${state.stage}". ` +
+      `Valid: [${validTypes.join(', ')}]. ` +
+      `Player chips: ${player.chips}, player bet: ${playerBetThisRound}, ` +
+      `call amount: ${diagCallAmount}, current bet: ${state.currentBet}, ` +
+      `turn seat: ${state.currentSeatIndex}, player seat: ${player.seatIndex}`,
     );
   }
 

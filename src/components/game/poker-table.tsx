@@ -48,8 +48,9 @@ export const PokerTable = memo(function PokerTable({
   function seatPosition(i: number): { top: string; left: string } {
     const offset = currentPlayerIndex >= 0 ? currentPlayerIndex : 0;
     const angle = ((i - offset) / n) * 2 * Math.PI + Math.PI / 2;
-    const rx = 42;
-    const ry = 36;
+    // rx=40, ry=37: players sit ON the wood rail, clearly outside the felt
+    const rx = 40;
+    const ry = 37;
     const cx = 50;
     const cy = 50;
     const x = cx + rx * Math.cos(angle);
@@ -60,16 +61,23 @@ export const PokerTable = memo(function PokerTable({
   return (
     <div
       aria-label="Poker table"
-      className={cn('relative w-full aspect-[3/2] max-h-full', className)}
+      // aspect-[4/3] gives more vertical room for players on portrait mobile.
+      // overflow-visible lets seat cards at the edge render without clipping.
+      className={cn('relative w-full aspect-[4/3] max-h-full overflow-visible', className)}
     >
-      {/* Table felt */}
+      {/* Wood rail — oval table surround visible behind the felt */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-[9%] rounded-[50%] bg-[#2c1a05] shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
+      />
+
+      {/* Table felt — green playing surface, clearly in the centre */}
       <div
         aria-hidden="true"
         className={cn(
-          'absolute inset-6 rounded-[50%]',
+          'absolute inset-[20%] rounded-[50%]',
           'bg-[radial-gradient(ellipse_at_center,_var(--color-felt)_0%,_var(--color-felt-dark)_100%)]',
-          'border-[8px] border-[#5c3d1e]',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.6)]',
+          'border-[4px] border-[rgba(0,0,0,0.25)]',
         )}
       />
 
