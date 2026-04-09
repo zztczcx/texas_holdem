@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getPusherServer } from '@/lib/pusher/server';
 import { getSessionId } from '@/lib/utils/session';
+import { getSession } from '@/lib/db/kv';
 
 /**
  * POST /api/pusher/auth
@@ -40,10 +41,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // For private channels (e.g. private-player-{playerId})
-  if (channelName.startsWith('private-')) {
-    // Only allow a player to subscribe to their own private channel
-    const targetId = channelName.replace(/^private-player-/, '');
-    if (targetId !== sessionId) {
+  if (channelName.startsWith('private-player-')) {
+    // Look up the player ID stored for this session in Redis.
+    // The channel name embeds the playerId (UUID assigned on join), which is
+    // different from sessionId, so we must resolve via the session record.
+    const session = await getSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 403 });
+    }
+
+    const targetPlayerId = channelName.replace(/^private-player-/, '');
+    if (targetPlayerId !== session.playerId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
