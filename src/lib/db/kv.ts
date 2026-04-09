@@ -49,23 +49,78 @@ function sessionKey(sessionId: string): string {
   return `player-session:${sessionId}`;
 }
 
+// ── Serialization helpers ─────────────────────────────────────────────────────
+//
+// `Set` objects lose their entries when round-tripped through JSON (they become
+// `{}`).  We normalize `bettingRound.actedPlayers` to a plain array before
+// writing to Redis and reconstruct the `Set` when reading back.
+
+type SerializedTable = Omit<Table, 'gameState'> & {
+  gameState: (Omit<NonNullable<Table['gameState']>, 'bettingRound'> & {
+    bettingRound: Omit<NonNullable<Table['gameState']>['bettingRound'], 'actedPlayers'> & {
+      actedPlayers: string[];
+    };
+  }) | null;
+};
+
+function serializeTable(table: Table): SerializedTable {
+  if (!table.gameState) return table as unknown as SerializedTable;
+  return {
+    ...table,
+    gameState: {
+      ...table.gameState,
+      bettingRound: {
+        ...table.gameState.bettingRound,
+        actedPlayers: Array.from(table.gameState.bettingRound.actedPlayers),
+      },
+    },
+  };
+}
+
+function deserializeTable(data: SerializedTable): Table {
+  if (!data.gameState) return data as unknown as Table;
+  const actedRaw = data.gameState.bettingRound.actedPlayers;
+  // Guard: after a Redis round-trip the value might be an array, an object, or
+  // already a Set (in tests).  Handle all three cases.
+  const actedSet: Set<string> =
+    actedRaw instanceof Set
+      ? actedRaw
+      : Array.isArray(actedRaw)
+        ? new Set<string>(actedRaw)
+        : new Set<string>(Object.keys(actedRaw as Record<string, unknown>));
+
+  return {
+    ...data,
+    gameState: {
+      ...data.gameState,
+      bettingRound: {
+        ...data.gameState.bettingRound,
+        actedPlayers: actedSet,
+      },
+    },
+  } as unknown as Table;
+}
+
 // ── Table CRUD ────────────────────────────────────────────────────────────────
 
 /**
  * Retrieve a table from KV. Returns null if not found.
+ * Revives Set fields (actedPlayers) that JSON round-trips lose.
  */
 export async function getTable(tableId: string): Promise<Table | null> {
   const redis = getRedis();
-  const data = await redis.get<Table>(tableKey(tableId));
-  return data ?? null;
+  const data = await redis.get<SerializedTable>(tableKey(tableId));
+  if (!data) return null;
+  return deserializeTable(data);
 }
 
 /**
  * Persist a table to KV with a 3-hour TTL.
+ * Serializes Set fields to arrays so JSON can represent them faithfully.
  */
 export async function setTable(table: Table): Promise<void> {
   const redis = getRedis();
-  await redis.set(tableKey(table.id), table, { ex: TABLE_TTL_SECONDS });
+  await redis.set(tableKey(table.id), serializeTable(table), { ex: TABLE_TTL_SECONDS });
 }
 
 /**
