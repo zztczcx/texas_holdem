@@ -145,7 +145,7 @@ export function createGameState(
         [sbPlayer.id]: (anteBets[sbPlayer.id] ?? 0) + sbAmount,
         [bbPlayer.id]: (anteBets[bbPlayer.id] ?? 0) + bbAmount,
       },
-      actedPlayers: new Set([bbPlayer.id]), // BB has "acted" (option)
+      actedPlayers: new Set<string>(), // nobody has acted yet; BB gets check option
     },
     lastAction: null,
     handNumber,

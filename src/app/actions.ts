@@ -31,6 +31,27 @@ import {
 } from '../lib/pusher/server';
 import type { GameSettings, GameState, Player, PlayerAction, Table, TableState } from '../types/game';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Deduct initial blind/ante bets from players' chips.
+ * Called right after createGameState() because the game state records blind
+ * commitments in bettingRound.bets, but does not mutate player chip counts.
+ */
+function deductInitialBets(
+  players: Record<string, Player>,
+  gameState: GameState,
+): Record<string, Player> {
+  const updated = { ...players };
+  for (const [pid, bet] of Object.entries(gameState.bettingRound.bets)) {
+    const p = updated[pid];
+    if (p && bet > 0) {
+      updated[pid] = { ...p, chips: Math.max(0, p.chips - bet) };
+    }
+  }
+  return updated;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface ActionResult<T = void> {
@@ -191,9 +212,13 @@ export async function startGame(
       1,
     );
 
+    // Deduct blind/ante commitments from player chip counts immediately
+    const playersWithBlindsDeducted = deductInitialBets(table.players, gameState);
+
     const updatedTable: Table = {
       ...table,
       state: 'playing',
+      players: playersWithBlindsDeducted,
       gameState,
       updatedAt: Date.now(),
     };
@@ -314,7 +339,7 @@ export async function performAction(
     };
 
     if (roundComplete) {
-      const nextStage = instantWin
+      let nextStage = instantWin
         ? 'showdown'
         : (NEXT_STAGE[newGameState.stage] ?? 'showdown');
 
@@ -323,6 +348,16 @@ export async function performAction(
       if (nextStage !== 'showdown') {
         // Post-flop: first active player after dealer acts first
         newGameState = { ...newGameState, currentSeatIndex: firstToActPostFlop() };
+      }
+
+      // Auto-deal remaining streets when nobody can act (all-in run-out)
+      while (nextStage !== 'showdown' && canActPlayers.length === 0) {
+        const autoNext = NEXT_STAGE[newGameState.stage] ?? 'showdown';
+        newGameState = advanceStage(newGameState, autoNext as typeof newGameState.stage);
+        nextStage = autoNext;
+        if (autoNext !== 'showdown') {
+          newGameState = { ...newGameState, currentSeatIndex: firstToActPostFlop() };
+        }
       }
 
       // ── Showdown / hand end ─────────────────────────────────────────────
@@ -364,6 +399,13 @@ export async function performAction(
             newDealerSeat,
             newGameState.handNumber + 1,
           );
+          // Deduct blind/ante commitments for the new hand
+          for (const [pid, bet] of Object.entries(nextGameState.bettingRound.bets)) {
+            const p = surviving[pid];
+            if (p && bet > 0) {
+              surviving[pid] = { ...p, chips: Math.max(0, p.chips - bet) };
+            }
+          }
         }
 
         const finalTable: Table = {
