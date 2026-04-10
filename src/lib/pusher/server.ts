@@ -1,6 +1,13 @@
 import Pusher from 'pusher';
-import type { GameState, Player, PlayerAction, HandEndResult } from '../../types/game';
-import type { filterGameStateForPlayer } from '../game/state-filter';
+import type {
+  GameState,
+  GameSyncSnapshot,
+  HandEndEventPayload,
+  Player,
+  PlayerAction,
+  PlayerHandEventPayload,
+  PublicTable,
+} from '../../types/game';
 
 // ── Client singleton ──────────────────────────────────────────────────────────
 
@@ -33,17 +40,10 @@ export function tableChannel(tableId: string): string {
 
 // ── Event payloads ────────────────────────────────────────────────────────────
 
-export type FilteredGameState = ReturnType<typeof filterGameStateForPlayer>;
-
-export interface TableStateUpdatePayload {
-  gameState: FilteredGameState;
-  players: Record<string, Player>;
-}
-
-export interface PlayerHandPayload {
-  playerId: string;
-  holeCards: GameState['playerHands'][string]['holeCards'];
-}
+export type TableStateUpdatePayload = GameSyncSnapshot;
+export type PlayerHandPayload = PlayerHandEventPayload;
+export type HandEndPayload = HandEndEventPayload;
+export type TableUpdatedPayload = PublicTable;
 
 export interface ShowdownPayload {
   hands: Record<string, GameState['playerHands'][string]>;
@@ -65,12 +65,10 @@ export interface PlayerLeftPayload {
  */
 export async function publishStateUpdate(
   tableId: string,
-  state: FilteredGameState,
-  players: Record<string, Player> = {},
+  snapshot: GameSyncSnapshot,
 ): Promise<void> {
   const pusher = getPusherServer();
-  const payload: TableStateUpdatePayload = { gameState: state, players };
-  await pusher.trigger(tableChannel(tableId), 'game:state-update', payload);
+  await pusher.trigger(tableChannel(tableId), 'game:state-update', snapshot);
 }
 
 /**
@@ -80,7 +78,7 @@ export async function publishStateUpdate(
  */
 export async function publishPlayerHand(
   playerId: string,
-  payload: PlayerHandPayload,
+  payload: PlayerHandEventPayload,
 ): Promise<void> {
   const pusher = getPusherServer();
   await pusher.trigger(`private-player-${playerId}`, 'game:player-hand', payload);
@@ -113,10 +111,21 @@ export async function publishShowdown(
  */
 export async function publishHandEnd(
   tableId: string,
-  result: HandEndResult,
+  payload: HandEndEventPayload,
 ): Promise<void> {
   const pusher = getPusherServer();
-  await pusher.trigger(tableChannel(tableId), 'game:hand-end', result);
+  await pusher.trigger(tableChannel(tableId), 'game:hand-end', payload);
+}
+
+/**
+ * Broadcast the latest public table snapshot for lobby updates.
+ */
+export async function publishTableUpdated(
+  tableId: string,
+  table: PublicTable,
+): Promise<void> {
+  const pusher = getPusherServer();
+  await pusher.trigger(tableChannel(tableId), 'table:updated', table);
 }
 
 /**
@@ -144,7 +153,7 @@ export async function publishPlayerLeft(
 /**
  * Broadcast that the game has started.
  */
-export async function publishGameStarted(tableId: string): Promise<void> {
+export async function publishGameStarted(tableId: string, revision: number): Promise<void> {
   const pusher = getPusherServer();
-  await pusher.trigger(tableChannel(tableId), 'table:game-started', {});
+  await pusher.trigger(tableChannel(tableId), 'table:game-started', { revision });
 }

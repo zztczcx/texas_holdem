@@ -1,58 +1,115 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import type { Table } from '@/types/game';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { Channel } from 'pusher-js';
+import { getPusherClient } from '@/lib/pusher/client';
+import type { PublicTable } from '@/types/game';
 
 interface UseTableResult {
-  table: Table | null;
+  table: PublicTable | null;
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 }
 
 /**
- * Poll the public table info endpoint for table metadata.
- * Also responds to Pusher-triggered refreshes when more players join.
+ * Subscribe to lobby table metadata and resync on subscription / reconnect.
  *
  * @param tableId - The table to load
- * @param pollInterval - How often to poll in ms (default: 5000). Set to 0 to disable.
+ * @param initialTable - Optional server-rendered lobby snapshot
  */
-export function useTable(tableId: string | null, pollInterval = 5000): UseTableResult {
-  const [table, setTable] = useState<Table | null>(null);
+export function useTable(
+  tableId: string | null,
+  initialTable: PublicTable | null = null,
+): UseTableResult {
+  const [table, setTable] = useState<PublicTable | null>(initialTable);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const revisionRef = useRef(initialTable?.revision ?? -1);
+  const refreshInFlightRef = useRef<Promise<void> | null>(null);
+
+  const applyTable = useCallback((nextTable: PublicTable) => {
+    if (nextTable.id !== tableId) {
+      return;
+    }
+
+    if (nextTable.revision < revisionRef.current) {
+      return;
+    }
+
+    revisionRef.current = nextTable.revision;
+    setTable(nextTable);
+    setError(null);
+  }, [tableId]);
 
   const refresh = useCallback(async () => {
     if (!tableId) return;
+
+    if (refreshInFlightRef.current) {
+      return refreshInFlightRef.current;
+    }
+
     setIsLoading(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/table/${tableId}`);
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        setError(body.error ?? 'Failed to load table.');
-        return;
+    const request = (async () => {
+      try {
+        const res = await fetch(`/api/table/${tableId}`, { cache: 'no-store' });
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: string };
+          setError(body.error ?? 'Failed to load table.');
+          return;
+        }
+
+        const data = (await res.json()) as PublicTable;
+        applyTable(data);
+      } catch {
+        setError('Network error — could not load table.');
+      } finally {
+        refreshInFlightRef.current = null;
+        setIsLoading(false);
       }
-      const data = (await res.json()) as Table;
-      setTable(data);
-    } catch {
-      setError('Network error — could not load table.');
-    } finally {
-      setIsLoading(false);
+    })();
+
+    refreshInFlightRef.current = request;
+    return request;
+  }, [applyTable, tableId]);
+
+  useEffect(() => {
+    if (!initialTable) {
+      void refresh();
     }
-  }, [tableId]);
+  }, [initialTable, refresh]);
 
-  // Initial load
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!tableId) return;
 
-  // Polling (useful as a fallback when Pusher is not available)
-  useEffect(() => {
-    if (!pollInterval || !tableId) return;
-    const id = setInterval(() => void refresh(), pollInterval);
-    return () => clearInterval(id);
-  }, [pollInterval, tableId, refresh]);
+    const pusher = getPusherClient();
+    const connection = pusher.connection;
+    const channelName = `presence-table-${tableId}`;
+    const channel: Channel = pusher.subscribe(channelName);
+
+    const handleConnectionStateChange = (states: { previous: string; current: string }) => {
+      if (states.current === 'connected') {
+        void refresh();
+      }
+    };
+
+    connection.bind('state_change', handleConnectionStateChange);
+
+    channel.bind('pusher:subscription_succeeded', () => {
+      void refresh();
+    });
+
+    channel.bind('table:updated', (payload: PublicTable) => {
+      applyTable(payload);
+    });
+
+    return () => {
+      connection.unbind('state_change', handleConnectionStateChange);
+      channel.unbind_all();
+      pusher.unsubscribe(channelName);
+    };
+  }, [applyTable, refresh, tableId]);
 
   return { table, isLoading, error, refresh };
 }

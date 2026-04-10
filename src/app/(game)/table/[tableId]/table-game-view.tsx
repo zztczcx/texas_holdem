@@ -31,9 +31,19 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     ? { ...initialTable.gameState, deck: null as null }
     : null;
 
-  const { gameState, livePlayers, handEndResult, refresh } = useGameState(
+  const {
+    tableState: liveTableState,
+    gameState,
+    livePlayers,
+    handEndResult,
+    refresh,
+    applySnapshot,
+    applyHandEndResult,
+  } = useGameState(
     initialTable.id,
     currentPlayerId,
+    initialTable.state,
+    initialTable.revision,
     initialGameState,
     initialTable.players,
   );
@@ -52,7 +62,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     currentPlayer.seatIndex === liveGameState.currentSeatIndex &&
     currentPlayer.status === 'active';
 
-  const isGameEnded = initialTable.state === 'ended';
+  const isGameEnded = liveTableState === 'ended';
   const isShowdown = liveGameState?.stage === 'showdown';
 
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
@@ -67,9 +77,15 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
       if (result.error) {
         addToast({ message: result.error, variant: 'danger' });
       } else {
-        // Immediately pull fresh state from the server so the actor's UI
-        // updates without waiting for the next Pusher delivery.
-        await refresh();
+        if (result.data?.snapshot) {
+          applySnapshot(result.data.snapshot);
+        } else {
+          await refresh();
+        }
+
+        if (result.data?.handEndResult) {
+          applyHandEndResult(result.data.handEndResult);
+        }
       }
     });
   }
@@ -106,7 +122,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     Object.values(livePlayers).map((p) => [p.id, p.name]),
   );
 
-  if (!liveGameState) {
+  if (!liveGameState && !isGameEnded) {
     return (
       <>
         <Header />
@@ -120,41 +136,43 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   return (
     <>
       <Header />
-      <main className="flex-1 min-h-0 flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-2 sm:py-4 sm:px-4 md:px-6">
-        {/* Turn timer (top of page when it's your turn) */}
-        {isMyTurn && initialTable.settings.turnTimerSeconds > 0 && (
-          <div className="flex justify-center mb-2">
-            <TurnTimer
-              totalSeconds={initialTable.settings.turnTimerSeconds}
-              isActive={!!isMyTurn}
-              onExpire={handleTimerExpire}
-            />
-          </div>
-        )}
+      {liveGameState && (
+        <main className="flex-1 min-h-0 flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-2 sm:py-4 sm:px-4 md:px-6">
+          {/* Turn timer (top of page when it's your turn) */}
+          {isMyTurn && initialTable.settings.turnTimerSeconds > 0 && (
+            <div className="flex justify-center mb-2">
+              <TurnTimer
+                totalSeconds={initialTable.settings.turnTimerSeconds}
+                isActive={!!isMyTurn}
+                onExpire={handleTimerExpire}
+              />
+            </div>
+          )}
 
-        {/* Poker table — grows to fill remaining space, constrained to viewport */}
-        <div className="flex-1 min-h-0 flex items-center justify-center">
-          <PokerTable
-            players={livePlayers}
-            gameState={liveGameState}
-            settings={initialTable.settings}
-            currentPlayerId={currentPlayerId}
-            className="max-h-full"
-          />
-        </div>
-
-        {/* Action bar — only shown to the active player on their turn */}
-        {isMyTurn && currentPlayer && (
-          <div className="mt-3 sm:mt-4 max-w-md mx-auto w-full px-1 sm:px-2">
-            <ActionBar
-              player={currentPlayer}
+          {/* Poker table — grows to fill remaining space, constrained to viewport */}
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <PokerTable
+              players={livePlayers}
               gameState={liveGameState}
               settings={initialTable.settings}
-              onAction={handleAction}
+              currentPlayerId={currentPlayerId}
+              className="max-h-full"
             />
           </div>
-        )}
-      </main>
+
+          {/* Action bar — only shown to the active player on their turn */}
+          {isMyTurn && currentPlayer && (
+            <div className="mt-3 sm:mt-4 max-w-md mx-auto w-full px-1 sm:px-2">
+              <ActionBar
+                player={currentPlayer}
+                gameState={liveGameState}
+                settings={initialTable.settings}
+                onAction={handleAction}
+              />
+            </div>
+          )}
+        </main>
+      )}
 
       {/* Showdown overlay */}
       {(isShowdown || handEndResult) && handEndResult && (
@@ -172,9 +190,9 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
       {/* Game end screen */}
       {isGameEnded && (
         <GameEndScreen
-          players={initialTable.players}
+          players={livePlayers}
           winnerPlayerId={
-            Object.values(initialTable.players).find((p) => p.chips > 0)?.id ?? null
+            Object.values(livePlayers).find((p) => p.chips > 0)?.id ?? null
           }
           tableId={initialTable.id}
         />

@@ -40,6 +40,7 @@ vi.mock('@/lib/pusher/server', () => ({
   publishStateUpdate: vi.fn().mockResolvedValue(undefined),
   publishHandEnd: vi.fn().mockResolvedValue(undefined),
   publishPlayerLeft: vi.fn().mockResolvedValue(undefined),
+  publishTableUpdated: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -77,6 +78,7 @@ function makeTable(overrides: Partial<Table> = {}): Table {
     id: 'table-abc',
     hostPlayerId: 'host-1',
     state: 'waiting',
+    revision: 0,
     settings: makeSettings(),
     players: { 'host-1': host },
     gameState: null,

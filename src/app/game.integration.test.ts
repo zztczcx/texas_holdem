@@ -49,6 +49,7 @@ vi.mock('@/lib/pusher/server', () => ({
   publishStateUpdate: vi.fn().mockResolvedValue(undefined),
   publishHandEnd: vi.fn().mockResolvedValue(undefined),
   publishPlayerLeft: vi.fn().mockResolvedValue(undefined),
+  publishTableUpdated: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ── ID generation (unique per test run to avoid Redis key collisions) ─────────
@@ -226,6 +227,7 @@ describe('Integration: full two-player game against real Redis', () => {
     const firstActorId = Object.values(tableBefore.players).find(
       (p) => p.seatIndex === gs.currentSeatIndex,
     )!.id;
+    const previousRevision = tableBefore.revision;
 
     // First actor calls
     const callResult = await performAction(tableId, firstActorId, {
@@ -236,10 +238,14 @@ describe('Integration: full two-player game against real Redis', () => {
 
     // If this throws "invalid action", the diagnostic message will show why
     expect(callResult.error).toBeUndefined();
+    expect(callResult.data?.snapshot.revision).toBe(previousRevision + 1);
 
     const rawAfter = await redis.get<Table>(`table:${tableId}`);
     const tableAfter = rawAfter as Table;
     const gsAfter = tableAfter.gameState!;
+
+    expect(tableAfter.revision).toBe(callResult.data?.snapshot.revision);
+    expect(callResult.data?.snapshot.players[firstActorId]?.id).toBe(firstActorId);
 
     // Either still pre-flop (BB option) or already at flop
     expect(['pre-flop', 'flop']).toContain(gsAfter.stage);

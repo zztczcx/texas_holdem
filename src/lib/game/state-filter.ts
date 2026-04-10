@@ -1,6 +1,9 @@
 import type {
+  FilteredGameState,
+  GameSyncSnapshot,
   GameState,
   Player,
+  PublicTable,
   Table,
   WinnerResult,
 } from '../../types/game';
@@ -15,7 +18,7 @@ import type {
 export function filterGameStateForPlayer(
   state: GameState,
   requestingPlayerId: string | null,
-): Omit<GameState, 'deck'> & { deck: null } {
+): FilteredGameState {
   const filteredHands: Record<string, { holeCards: null | typeof state.playerHands[string]['holeCards']; bestHand?: typeof state.playerHands[string]['bestHand'] }> = {};
 
   for (const [playerId, hand] of Object.entries(state.playerHands)) {
@@ -44,11 +47,28 @@ export function filterGameStateForPlayer(
 export function buildPublicTable(
   table: Table,
   requestingPlayerId: string | null,
-): Omit<Table, 'gameState'> & {
-  gameState: ReturnType<typeof filterGameStateForPlayer> | null;
-} {
+): PublicTable {
   return {
     ...table,
+    gameState: table.gameState
+      ? filterGameStateForPlayer(table.gameState, requestingPlayerId)
+      : null,
+  };
+}
+
+/**
+ * Build the authoritative in-game snapshot sent to subscribed clients.
+ */
+export function buildGameSyncSnapshot(
+  table: Table,
+  requestingPlayerId: string | null,
+): GameSyncSnapshot {
+  return {
+    tableId: table.id,
+    tableState: table.state,
+    revision: table.revision,
+    updatedAt: table.updatedAt,
+    players: table.players,
     gameState: table.gameState
       ? filterGameStateForPlayer(table.gameState, requestingPlayerId)
       : null,

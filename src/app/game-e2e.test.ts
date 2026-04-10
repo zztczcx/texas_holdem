@@ -49,6 +49,7 @@ vi.mock('@/lib/pusher/server', () => ({
   publishStateUpdate: vi.fn().mockResolvedValue(undefined),
   publishHandEnd: vi.fn().mockResolvedValue(undefined),
   publishPlayerLeft: vi.fn().mockResolvedValue(undefined),
+  publishTableUpdated: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ── In-memory KV store ────────────────────────────────────────────────────────

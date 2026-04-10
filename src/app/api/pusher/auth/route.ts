@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getPusherServer } from '@/lib/pusher/server';
-import { getSessionId } from '@/lib/utils/session';
+import { getOrCreateSessionId } from '@/lib/utils/session';
 import { getSession } from '@/lib/db/kv';
 
 /**
@@ -10,11 +10,9 @@ import { getSession } from '@/lib/db/kv';
  * Pusher sends: socket_id + channel_name in the POST body (form-encoded).
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Retrieve the session to identify the player
-  const sessionId = await getSessionId();
-  if (!sessionId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Ensure every viewer has a stable session so anonymous spectators can
+  // subscribe to presence channels before joining the table.
+  const sessionId = await getOrCreateSessionId();
 
   // Pusher sends the auth request as form-encoded body
   const body = await request.text();

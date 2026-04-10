@@ -91,6 +91,8 @@ export interface GameState {
   handNumber: number;
 }
 
+export type FilteredGameState = Omit<GameState, 'deck'> & { deck: null };
+
 // Table / settings
 export interface GameSettings {
   startingChips: number;
@@ -110,11 +112,25 @@ export interface Table {
   id: string;
   hostPlayerId: string;
   state: TableState;
+  revision: number;
   settings: GameSettings;
   players: Record<string, Player>;
   gameState: GameState | null;
   createdAt: number;
   updatedAt: number;
+}
+
+export type PublicTable = Omit<Table, 'gameState'> & {
+  gameState: FilteredGameState | null;
+};
+
+export interface GameSyncSnapshot {
+  tableId: string;
+  tableState: TableState;
+  revision: number;
+  updatedAt: number;
+  players: Record<string, Player>;
+  gameState: FilteredGameState | null;
 }
 
 // Winner result
@@ -143,4 +159,16 @@ export interface HandEndResult {
   communityCards: readonly Card[];
   /** Hole cards for all players who reached showdown; absent for folders */
   playerHands: Record<string, PlayerHand | undefined>;
+}
+
+export interface HandEndEventPayload {
+  revision: number;
+  result: HandEndResult;
+}
+
+export interface PlayerHandEventPayload {
+  playerId: string;
+  revision: number;
+  handNumber: number;
+  holeCards: GameState['playerHands'][string]['holeCards'];
 }

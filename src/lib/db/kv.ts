@@ -56,6 +56,7 @@ function sessionKey(sessionId: string): string {
 // writing to Redis and reconstruct the `Set` when reading back.
 
 type SerializedTable = Omit<Table, 'gameState'> & {
+  revision?: number;
   gameState: (Omit<NonNullable<Table['gameState']>, 'bettingRound'> & {
     bettingRound: Omit<NonNullable<Table['gameState']>['bettingRound'], 'actedPlayers'> & {
       actedPlayers: string[];
@@ -78,7 +79,12 @@ function serializeTable(table: Table): SerializedTable {
 }
 
 function deserializeTable(data: SerializedTable): Table {
-  if (!data.gameState) return data as unknown as Table;
+  if (!data.gameState) {
+    return {
+      ...data,
+      revision: data.revision ?? 0,
+    } as Table;
+  }
   const actedRaw = data.gameState.bettingRound.actedPlayers;
   // Guard: after a Redis round-trip the value might be an array, an object, or
   // already a Set (in tests).  Handle all three cases.
@@ -91,6 +97,7 @@ function deserializeTable(data: SerializedTable): Table {
 
   return {
     ...data,
+    revision: data.revision ?? 0,
     gameState: {
       ...data.gameState,
       bettingRound: {

@@ -19,7 +19,7 @@ import {
 import { getOrCreateSessionId } from '../lib/utils/session';
 import { generateTableId } from '../lib/utils/nanoid';
 import { createGameState, determineWinners, computeHandEnd, applyAction, advanceStage } from '../lib/game/game-state';
-import { assertIsHost, assertPlayerInTable, filterGameStateForPlayer } from '../lib/game/state-filter';
+import { assertIsHost, assertPlayerInTable, buildGameSyncSnapshot, buildPublicTable } from '../lib/game/state-filter';
 import {
   publishPlayerJoined,
   publishGameStarted,
@@ -28,8 +28,19 @@ import {
   publishStateUpdate,
   publishHandEnd,
   publishPlayerLeft,
+  publishTableUpdated,
 } from '../lib/pusher/server';
-import type { GameSettings, GameState, Player, PlayerAction, Table, TableState } from '../types/game';
+import type {
+  GameSettings,
+  GameState,
+  GameSyncSnapshot,
+  HandEndEventPayload,
+  HandEndResult,
+  Player,
+  PlayerAction,
+  Table,
+  TableState,
+} from '../types/game';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -52,11 +63,28 @@ function deductInitialBets(
   return updated;
 }
 
+function updateTable(
+  table: Table,
+  updates: Partial<Pick<Table, 'state' | 'players' | 'gameState'>>,
+): Table {
+  return {
+    ...table,
+    ...updates,
+    revision: table.revision + 1,
+    updatedAt: Date.now(),
+  };
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface ActionResult<T = void> {
   data?: T;
   error?: string;
+}
+
+export interface PerformActionResultData {
+  snapshot: GameSyncSnapshot;
+  handEndResult?: HandEndEventPayload;
 }
 
 // ── createTable ───────────────────────────────────────────────────────────────
@@ -90,6 +118,7 @@ export async function createTable(
       id: tableId,
       hostPlayerId: playerId,
       state: 'waiting',
+      revision: 0,
       settings: parsed.data.settings,
       players: { [playerId]: host },
       gameState: null,
@@ -151,15 +180,14 @@ export async function joinTable(
       joinedAt: now,
     };
 
-    const updatedTable: Table = {
-      ...table,
+    const updatedTable = updateTable(table, {
       players: { ...table.players, [playerId]: player },
-      updatedAt: now,
-    };
+    });
 
     await setTable(updatedTable);
     await setSession(sessionId, { tableId, playerId });
 
+    await publishTableUpdated(tableId, buildPublicTable(updatedTable, null)).catch(() => null);
     // Notify other players that someone joined
     await publishPlayerJoined(tableId, player).catch(() => null);
 
@@ -215,22 +243,26 @@ export async function startGame(
     // Deduct blind/ante commitments from player chip counts immediately
     const playersWithBlindsDeducted = deductInitialBets(table.players, gameState);
 
-    const updatedTable: Table = {
-      ...table,
+    const updatedTable = updateTable(table, {
       state: 'playing',
       players: playersWithBlindsDeducted,
       gameState,
-      updatedAt: Date.now(),
-    };
+    });
 
     await setTable(updatedTable);
 
+    await publishTableUpdated(tableId, buildPublicTable(updatedTable, null)).catch(() => null);
     // Notify all players that game started
-    await publishGameStarted(tableId).catch(() => null);
+    await publishGameStarted(tableId, updatedTable.revision).catch(() => null);
 
     // Send each player their private hole cards
     for (const [pid, hand] of Object.entries(gameState.playerHands)) {
-      await publishPlayerHand(pid, { playerId: pid, holeCards: hand.holeCards }).catch(() => null);
+      await publishPlayerHand(pid, {
+        playerId: pid,
+        revision: updatedTable.revision,
+        handNumber: gameState.handNumber,
+        holeCards: hand.holeCards,
+      }).catch(() => null);
     }
 
     return {};
@@ -247,7 +279,7 @@ export async function performAction(
   tableId: string,
   playerId: string,
   action: PlayerAction,
-): Promise<ActionResult> {
+): Promise<ActionResult<PerformActionResultData>> {
   const parsed = PlayerActionSchema.safeParse({ tableId, playerId, action });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
@@ -408,12 +440,16 @@ export async function performAction(
           }
         }
 
-        const finalTable: Table = {
-          ...table,
+        const finalTable = updateTable(table, {
           state: nextTableState,
           players: surviving,
           gameState: nextGameState,
-          updatedAt: Date.now(),
+        });
+        const actorSnapshot = buildGameSyncSnapshot(finalTable, parsed.data.playerId);
+        const publicSnapshot = buildGameSyncSnapshot(finalTable, null);
+        const handEndPayload: HandEndEventPayload = {
+          revision: finalTable.revision,
+          result: handEnd,
         };
 
         await setTable(finalTable);
@@ -422,21 +458,30 @@ export async function performAction(
         lockReleased = true;
 
         await publishPusherAction(tableId, parsed.data.action).catch(() => null);
-        await publishHandEnd(tableId, handEnd).catch(() => null);
+        await publishHandEnd(tableId, handEndPayload).catch(() => null);
+        await publishStateUpdate(tableId, publicSnapshot).catch(() => null);
 
-        // Publish next hand state and private hole cards
+        // Publish next hand hole cards for the same revision.
         if (nextGameState) {
-          const publicNextState = filterGameStateForPlayer(nextGameState, null);
-          await publishStateUpdate(tableId, publicNextState, surviving).catch(() => null);
           for (const p of Object.values(surviving)) {
             const hand = nextGameState.playerHands[p.id];
             if (hand) {
-              await publishPlayerHand(p.id, { playerId: p.id, holeCards: hand.holeCards }).catch(() => null);
+              await publishPlayerHand(p.id, {
+                playerId: p.id,
+                revision: finalTable.revision,
+                handNumber: nextGameState.handNumber,
+                holeCards: hand.holeCards,
+              }).catch(() => null);
             }
           }
         }
 
-        return {};
+        return {
+          data: {
+            snapshot: actorSnapshot,
+            handEndResult: handEndPayload,
+          },
+        };
       }
     } else {
       // Advance turn to next player who can act
@@ -444,12 +489,12 @@ export async function performAction(
       newGameState = { ...newGameState, currentSeatIndex: nextSeatIn(player.seatIndex, nextPool) };
     }
 
-    const updatedTable: Table = {
-      ...table,
+    const updatedTable = updateTable(table, {
       gameState: newGameState,
       players: newPlayers,
-      updatedAt: Date.now(),
-    };
+    });
+    const actorSnapshot = buildGameSyncSnapshot(updatedTable, parsed.data.playerId);
+    const publicSnapshot = buildGameSyncSnapshot(updatedTable, null);
 
     await setTable(updatedTable);
     // Release lock BEFORE Pusher calls
@@ -457,11 +502,9 @@ export async function performAction(
     lockReleased = true;
 
     await publishPusherAction(tableId, parsed.data.action).catch(() => null);
-    // Broadcast public state (no hole cards) + live player data
-    const publicState = filterGameStateForPlayer(newGameState, null);
-    await publishStateUpdate(tableId, publicState, newPlayers).catch(() => null);
+    await publishStateUpdate(tableId, publicSnapshot).catch(() => null);
 
-    return {};
+    return { data: { snapshot: actorSnapshot } };
   } catch (e) {
     console.error('performAction error:', e);
     return { error: 'Failed to perform action. Please try again.' };
@@ -504,11 +547,9 @@ export async function buyBack(
       status: 'active',
     };
 
-    const updatedTable: Table = {
-      ...table,
+    const updatedTable = updateTable(table, {
       players: { ...table.players, [player.id]: updatedPlayer },
-      updatedAt: Date.now(),
-    };
+    });
 
     await setTable(updatedTable);
     return {};
@@ -558,13 +599,12 @@ export async function kickPlayer(
       Object.entries(table.players).filter(([id]) => id !== kickedId),
     );
 
-    const updatedTable: Table = {
-      ...table,
+    const updatedTable = updateTable(table, {
       players: remainingPlayers,
-      updatedAt: Date.now(),
-    };
+    });
 
     await setTable(updatedTable);
+    await publishTableUpdated(tableId, buildPublicTable(updatedTable, null)).catch(() => null);
     await publishPlayerLeft(tableId, kickedId).catch(() => null);
     return {};
   } catch {
@@ -573,8 +613,6 @@ export async function kickPlayer(
     await releaseLock(lock);
   }
 }
-
-import type { HandEndResult } from '../types/game';
 
 // ── endHand (internal helper) ─────────────────────────────────────────────────
 
@@ -625,16 +663,18 @@ export async function endHand(tableId: string): Promise<ActionResult<HandEndResu
     const remaining = Object.values(surviving).filter((p) => p.chips > 0);
     const tableState: typeof table.state = remaining.length < 2 ? 'ended' : 'playing';
 
-    const updatedTable: Table = {
-      ...table,
+    const updatedTable = updateTable(table, {
       state: tableState,
       players: surviving,
       gameState: null,
-      updatedAt: Date.now(),
-    };
+    });
 
     await setTable(updatedTable);
-    await publishHandEnd(tableId, handEnd).catch(() => null);
+    await publishHandEnd(tableId, {
+      revision: updatedTable.revision,
+      result: handEnd,
+    }).catch(() => null);
+    await publishStateUpdate(tableId, buildGameSyncSnapshot(updatedTable, null)).catch(() => null);
     return { data: handEnd };
   } catch {
     return { error: 'Failed to end hand. Please try again.' };

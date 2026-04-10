@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Table } from '@/types/game';
+import type { PublicTable, Table } from '@/types/game';
 import { Header } from '@/components/layout/header';
 import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { joinTable, startGame } from '@/app/actions';
 import { useTable } from '@/hooks/use-table';
-import { getPusherClient } from '@/lib/pusher/client';
 
 interface TableLobbyProps {
   table: Table;
@@ -20,29 +19,13 @@ interface TableLobbyProps {
 export function TableLobby({ table: initialTable, currentPlayerId: initialPlayerId }: TableLobbyProps): React.ReactElement {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const initialLobbyTable = initialTable as PublicTable;
 
-  // Polling for live updates in the lobby
-  const { table } = useTable(initialTable.id, 3000);
-  const liveTable = table ?? initialTable;
+  const { table, refresh } = useTable(initialTable.id, initialLobbyTable);
+  const liveTable = table ?? initialLobbyTable;
 
   const [playerId, setPlayerId] = useState(initialPlayerId);
 
-  // Subscribe to Pusher so we instantly navigate to the game when it starts.
-  // The lobby doesn't need full game state — just the game:started signal.
-  useEffect(() => {
-    const pusher = getPusherClient();
-    const channelName = `presence-table-${initialTable.id}`;
-    const channel = pusher.subscribe(channelName);
-    channel.bind('table:game-started', () => {
-      router.refresh();
-    });
-    return () => {
-      channel.unbind('table:game-started');
-      pusher.unsubscribe(channelName);
-    };
-  }, [initialTable.id, router]);
-
-  // Polling fallback: if we detect state === 'playing' via HTTP poll, refresh the page.
   useEffect(() => {
     if (liveTable.state === 'playing') {
       router.refresh();
@@ -70,6 +53,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
         setJoinError(result.error);
       } else if (result.data) {
         setPlayerId(result.data.playerId);
+        await refresh();
       }
     });
   }
