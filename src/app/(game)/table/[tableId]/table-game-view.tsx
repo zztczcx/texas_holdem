@@ -415,8 +415,8 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
           tableId={initialTable.id}
           finalGameState={handEndResult
             ? {
-                communityCards: handEndResult.result.communityCards,
-                playerHands: handEndResult.result.playerHands,
+                communityCards: handEndResult.communityCards,
+                playerHands: handEndResult.playerHands,
               }
             : null}
         />
