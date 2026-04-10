@@ -74,7 +74,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
     <div
       className={cn(
         'flex flex-col gap-3 rounded-[28px] border p-4',
-        'border-white/10 bg-[#152029]/96 shadow-[0_16px_48px_rgba(0,0,0,0.32)]',
+        'border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         className,
       )}
       aria-label="Your turn - choose an action"
@@ -86,13 +86,13 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
         )}
       >
         <div className="overflow-hidden">
-          <div className="rounded-[22px] border border-white/8 bg-white/4 px-3 py-3">
+          <div className="rounded-[20px] border border-[var(--color-border-muted)] bg-[var(--color-canvas)]/32 px-3 py-3">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
                 Preset chips
               </p>
               {effectiveSelectedRaiseAmount !== null && (
-                <span className="rounded-full border border-[#d79a3b]/30 bg-[#d79a3b]/16 px-2.5 py-1 text-xs font-semibold text-[#ffd480]">
+                <span className="rounded-full border border-[var(--color-gold)]/30 bg-[var(--color-gold)]/14 px-2.5 py-1 text-xs font-semibold text-[var(--color-gold)]">
                   {raiseVerb} {formatCurrency(effectiveSelectedRaiseAmount)}
                 </span>
               )}
@@ -107,8 +107,8 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
                   onClick={() => setSelectedRaiseAmount(option.amount)}
                   className={cn(
                     'shrink-0 rounded-full border px-3 py-2 text-xs font-semibold tracking-[0.08em] transition-colors',
-                    'border-white/8 bg-white/4 text-[var(--color-text-primary)] hover:bg-white/8',
-                    effectiveSelectedRaiseAmount === option.amount && 'border-[#d79a3b]/35 bg-[#d79a3b]/18 text-[#ffd480]',
+                    'border-[var(--color-border)] bg-[var(--color-border-muted)]/70 text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/70 hover:text-[var(--color-text-primary)]',
+                    effectiveSelectedRaiseAmount === option.amount && 'border-[var(--color-gold)]/30 bg-[var(--color-gold)]/14 text-[var(--color-gold)]',
                   )}
                 >
                   {option.label}
@@ -136,17 +136,17 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             size="md"
             isLoading={isPending}
             onClick={() => dispatch('check')}
-            className="w-full justify-center border-white/8 bg-white/6 text-[var(--color-text-primary)] hover:bg-white/10"
+            className="w-full justify-center"
           >
             Check
           </Button>
         ) : canCall ? (
           <Button
-            variant="secondary"
+            variant="primary"
             size="md"
             isLoading={isPending}
             onClick={() => dispatch('call')}
-            className="w-full justify-center border-[#16889a]/30 bg-[#0f7c8b] text-white hover:bg-[#0d6f7d]"
+            className="w-full justify-center"
           >
             Call {formatCurrency(callAmount)}
           </Button>
@@ -156,12 +156,12 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
 
         {canRaise ? (
           <Button
-            variant="gold"
+            variant="primary"
             size="md"
             isLoading={isPending}
             onClick={handleRaiseButtonClick}
             disabled={isRaisePanelOpen && effectiveSelectedRaiseAmount === null}
-            className="w-full justify-center bg-[#d18a2d] text-[#2c1810] hover:bg-[#c47d21]"
+            className="w-full justify-center"
           >
             {isRaisePanelOpen && effectiveSelectedRaiseAmount !== null
               ? `${raiseVerb} ${formatCurrency(effectiveSelectedRaiseAmount)}`
@@ -173,11 +173,11 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
 
         {canAllIn ? (
           <Button
-            variant="secondary"
+            variant="gold"
             size="md"
             isLoading={isPending}
             onClick={() => dispatch('allIn')}
-            className="w-full justify-center border-[#e07a5f]/30 bg-[#e07a5f] text-[#2c1810] hover:bg-[#d96a4c]"
+            className="w-full justify-center"
           >
             All-in {formatCurrency(player.chips)}
           </Button>
@@ -195,7 +195,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
               setIsRaisePanelOpen(false);
               setSelectedRaiseAmount(null);
             }}
-            className="border-white/8 bg-white/6 hover:bg-white/10"
+            className="border-[var(--color-border)] bg-[var(--color-border-muted)]/70"
           >
             Cancel
           </Button>

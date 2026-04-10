@@ -206,31 +206,31 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     <>
       <Header />
       {liveGameState && (
-        <main className="h-[calc(100dvh-3.75rem)] bg-[radial-gradient(circle_at_top,#0f7c70_0%,rgba(15,124,112,0.28)_26%,transparent_58%),linear-gradient(180deg,#0d4f47_0%,#10372d_36%,#0d1b12_100%)] px-3 py-3 sm:px-4 sm:py-4 md:h-[calc(100dvh-4.25rem)] md:px-6">
-          <section className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[#20313a]/86 shadow-[0_26px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-            <div className="shrink-0 border-b border-white/10 bg-[#4d8275]/42 px-3 py-3 sm:px-5 sm:py-5">
+        <main className="h-[calc(100dvh-3.75rem)] bg-[radial-gradient(circle_at_top,var(--color-felt)_0%,var(--color-felt-dark)_42%,var(--color-canvas)_100%)] px-3 py-3 sm:px-4 sm:py-4 md:h-[calc(100dvh-4.25rem)] md:px-6">
+          <section className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-[var(--color-border)] bg-[var(--color-surface)]/94 shadow-[0_16px_48px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+            <div className="shrink-0 border-b border-[var(--color-border)] bg-[linear-gradient(180deg,rgba(45,106,79,0.72),rgba(26,61,43,0.88))] px-3 py-3 sm:px-5 sm:py-5">
               <div className="flex flex-col gap-3">
                 <div className="overflow-x-auto">
                   <CommunityCards
                     cards={displayCommunityCards}
-                    className="min-w-max rounded-[26px] border border-white/10 bg-white/8 px-3 py-3 backdrop-blur-sm"
+                    className="min-w-max rounded-[20px] border border-[var(--color-border)] bg-[var(--color-felt-dark)]/72 px-3 py-3"
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 rounded-[24px] border border-white/10 bg-[#3c7065]/56 px-4 py-3 backdrop-blur-sm">
+                <div className="flex flex-wrap items-center gap-3 rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)]/92 px-4 py-3">
                   <div
                     aria-hidden="true"
-                    className="relative h-10 w-10 shrink-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,#ffd58c,#f28b22_58%,#c55200_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.18)]"
+                    className="relative h-10 w-10 shrink-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,#f4d998,#d4af37_58%,#a8770f_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.24)]"
                   >
-                    <span className="absolute inset-[18%] rounded-full border-2 border-dashed border-white/45" />
-                    <span className="absolute inset-[34%] rounded-full bg-white/70" />
+                    <span className="absolute inset-[18%] rounded-full border-2 border-dashed border-[#f5e7bc]/70" />
+                    <span className="absolute inset-[34%] rounded-full bg-[#fff7df]/70" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/72">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
                       Pot
                     </p>
-                    <p className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">
+                    <p className="text-2xl font-semibold tabular-nums text-[var(--color-text-primary)] sm:text-3xl">
                       {formatCurrency(displayPot)}
                     </p>
                   </div>
@@ -240,7 +240,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                       rank={displayBestHand.rank}
                       description={displayBestHand.rankName}
                       isWinner={Boolean(activeHandEndResult)}
-                      className="order-3 w-full border-white/10 bg-[#20313a]/78 sm:order-none sm:w-auto"
+                      className="order-3 w-full border-[var(--color-border)] bg-[var(--color-surface)] sm:order-none sm:w-auto"
                     />
                   )}
 
@@ -253,7 +253,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                         className="shrink-0"
                       />
                     )}
-                    <span className="text-lg font-medium uppercase tracking-[0.18em] text-white/88 sm:text-xl">
+                    <span className="text-lg font-medium uppercase tracking-[0.18em] text-[var(--color-text-muted)] sm:text-xl">
                       {displayRoundLabel}
                     </span>
                   </div>
@@ -261,7 +261,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-[#24313a]/94 px-3 py-3 sm:px-5 sm:py-5">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(20,38,26,0.94),rgba(13,27,18,0.98))] px-3 py-3 sm:px-5 sm:py-5">
               <div className="flex flex-col gap-3">
                 {orderedPlayers.map((player) => {
                   const resultHand = activeHandEndResult?.playerHands[player.id];
@@ -292,13 +292,13 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
             </div>
 
             {activeHandEndResult && (
-              <div className="shrink-0 border-t border-white/10 bg-[#152029]/94 px-3 py-3 sm:px-5 sm:py-4">
+              <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]/96 px-3 py-3 sm:px-5 sm:py-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-[var(--color-text-muted)]">
                       {formatWinnersText(activeHandEndResult, playerNames)}
                     </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/55">
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]/80">
                       Hand #{activeHandEndResult.handNumber} complete
                     </p>
                   </div>
@@ -318,7 +318,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
             )}
 
             {isMyTurn && currentPlayer && !activeHandEndResult && (
-              <div className="shrink-0 border-t border-white/10 bg-[#152029]/92 px-3 py-3 backdrop-blur-sm sm:px-5 sm:py-4">
+              <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]/96 px-3 py-3 sm:px-5 sm:py-4">
                 <ActionBar
                   player={currentPlayer}
                   gameState={liveGameState}
