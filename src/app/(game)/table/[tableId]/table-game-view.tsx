@@ -28,6 +28,8 @@ interface TableGameViewProps {
 }
 
 type PlayerActionHistory = Record<number, Record<string, PlayerRowActionBadge>>;
+// Tracks cumulative chips wagered per player per hand (across all betting rounds)
+type CumulativeBets = Record<number, Record<string, number>>;
 
 /**
  * The in-game view: top board strip, scrollable player list, and sticky action footer.
@@ -36,6 +38,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   const [isPending, startTransition] = useTransition();
   const [dismissedHandNumber, setDismissedHandNumber] = useState<number | null>(null);
   const [actionHistoryByHand, setActionHistoryByHand] = useState<PlayerActionHistory>({});
+  const [cumulativeBetsByHand, setCumulativeBetsByHand] = useState<CumulativeBets>({});
   const { toasts, addToast, dismissToast } = useToast();
   const previousGameStateRef = useRef<FilteredGameState | null>(null);
   const processedActionKeyRef = useRef<string | null>(null);
@@ -98,6 +101,24 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
           [action.playerId]: nextBadge,
         },
       }));
+
+      // Accumulate total chips wagered this hand per player
+      const betNow = liveGameState.bettingRound.bets[action.playerId] ?? 0;
+      const betBefore = previousGameStateRef.current?.bettingRound.bets[action.playerId] ?? 0;
+      const betThisAction = Math.max(0, betNow - betBefore);
+      if (betThisAction > 0) {
+        setCumulativeBetsByHand((prev) => {
+          const handBets = prev[liveGameState.handNumber] ?? {};
+          return {
+            ...prev,
+            [liveGameState.handNumber]: {
+              ...handBets,
+              [action.playerId]: (handBets[action.playerId] ?? 0) + betThisAction,
+            },
+          };
+        });
+      }
+
       processedActionKeyRef.current = actionKey;
     }
 
@@ -282,7 +303,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                       : currentPlayerId === player.id;
                     const currentRoundBet = activeHandEndResult
                       ? undefined
-                      : liveGameState.bettingRound.bets[player.id];
+                      : (displayHandNumber != null ? cumulativeBetsByHand[displayHandNumber]?.[player.id] : undefined);
                     const playerRole = getPlayerRole(player.seatIndex, liveGameState);
 
                     return (
@@ -392,6 +413,12 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
           players={livePlayers}
           winnerPlayerId={Object.values(livePlayers).find((player) => player.chips > 0)?.id ?? null}
           tableId={initialTable.id}
+          finalGameState={handEndResult
+            ? {
+                communityCards: handEndResult.result.communityCards,
+                playerHands: handEndResult.result.playerHands,
+              }
+            : null}
         />
       )}
 

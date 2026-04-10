@@ -161,7 +161,7 @@ describe('ActionBar', () => {
     );
     const raiseBtn = screen.getByRole('button', { name: /^raise$/i });
     await user.click(raiseBtn);
-    expect(screen.getByRole('button', { name: /\$500/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^min$/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDefined();
   });
 
@@ -177,8 +177,9 @@ describe('ActionBar', () => {
       />,
     );
     await user.click(screen.getByRole('button', { name: /^raise$/i }));
-    await user.click(screen.getByRole('button', { name: /\$500/i }));
-    expect(onAction).toHaveBeenCalledWith('raise', 500);
+    // pot=30, currentBet=20, minimumRaise=20 → minRaise = 20+20-0 = 40
+    await user.click(screen.getByRole('button', { name: /^min$/i }));
+    expect(onAction).toHaveBeenCalledWith('raise', 40);
   });
 
   it('hides the preset row when Cancel is clicked', async () => {

@@ -27,13 +27,19 @@ export interface PlayerRowProps {
   className?: string;
 }
 
+// Deterministic animal emoji per seat — warm, playful, poker-themed
+const AVATAR_ANIMALS = ['🦊', '🐻', '🐯', '🦁', '🐼', '🐺', '🦝', '🦅', '🦉'] as const;
+
 const AVATAR_PALETTES = [
-  'bg-[var(--color-felt)] text-[var(--color-text-primary)]',
-  'bg-[var(--color-gold)] text-[var(--color-text-on-light)]',
-  'bg-[var(--color-warning)] text-[var(--color-text-on-light)]',
-  'bg-[var(--color-success)] text-[var(--color-text-primary)]',
-  'bg-[var(--color-focus)] text-[var(--color-text-primary)]',
-  'bg-[var(--color-border)] text-[var(--color-text-primary)]',
+  'bg-[var(--color-felt)]',
+  'bg-[#7a3b1e]',
+  'bg-[#5a3200]',
+  'bg-[#1a3d2b]',
+  'bg-[#2c1048]',
+  'bg-[#1e3a5f]',
+  'bg-[#3d2b00]',
+  'bg-[#1a2b1a]',
+  'bg-[#2c1810]',
 ] as const;
 
 const ACTION_BADGE_CLASSES: Record<PlayerRowActionTone, string> = {
@@ -62,12 +68,7 @@ export function PlayerRow({
   className,
 }: PlayerRowProps): React.ReactElement {
   const palette = AVATAR_PALETTES[player.seatIndex % AVATAR_PALETTES.length];
-  const initials = player.name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || player.name.slice(0, 1).toUpperCase();
+  const animal = AVATAR_ANIMALS[player.seatIndex % AVATAR_ANIMALS.length];
 
   return (
     <article
@@ -86,7 +87,7 @@ export function PlayerRow({
           <div
             aria-hidden="true"
             className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold sm:h-14 sm:w-14 sm:text-base',
+              'flex h-12 w-12 items-center justify-center rounded-full text-2xl sm:h-14 sm:w-14 sm:text-3xl',
               palette,
               'ring-2',
               isWinner
@@ -96,7 +97,7 @@ export function PlayerRow({
                   : 'ring-[var(--color-border)]/60',
             )}
           >
-            {initials}
+            <span>{animal}</span>
           </div>
           {isActive && (
             <span

@@ -59,6 +59,11 @@ export const KickPlayerSchema = z.object({
   targetPlayerId: z.string().uuid(),
 });
 
+export const ResetGameSchema = z.object({
+  tableId: z.string().length(6),
+  hostPlayerId: z.string().uuid(),
+});
+
 // ── API response shapes ─────────────────────────────────────────────────────
 
 export interface CreateTableResponse {

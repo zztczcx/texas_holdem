@@ -183,13 +183,15 @@ interface PresetOption {
 }
 
 function buildPresetOptions(pot: number, minRaise: number, maxRaise: number): readonly PresetOption[] {
+  // Pot-relative presets — professional poker sizing conventions
   const rawOptions: readonly PresetOption[] = [
-    { label: '$500', amount: 500 },
-    { label: '$1K', amount: 1_000 },
-    { label: '$2K', amount: 2_000 },
-    { label: '$5K', amount: 5_000 },
+    { label: 'Min', amount: minRaise },
+    { label: '1/4 Pot', amount: Math.max(1, Math.round(pot * 0.25)) },
+    { label: '1/3 Pot', amount: Math.max(1, Math.round(pot / 3)) },
     { label: '1/2 Pot', amount: Math.max(1, Math.round(pot / 2)) },
-    { label: 'Full Pot', amount: Math.max(1, Math.round(pot)) },
+    { label: '2/3 Pot', amount: Math.max(1, Math.round(pot * 0.667)) },
+    { label: 'Pot', amount: Math.max(1, Math.round(pot)) },
+    { label: '2× Pot', amount: Math.max(1, Math.round(pot * 2)) },
   ];
 
   const seenAmounts = new Set<number>();

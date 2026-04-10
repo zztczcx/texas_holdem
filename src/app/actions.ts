@@ -8,6 +8,7 @@ import {
   PlayerActionSchema,
   BuyBackSchema,
   KickPlayerSchema,
+  ResetGameSchema,
 } from '../lib/utils/validate';
 import {
   getTable,
@@ -678,6 +679,58 @@ export async function endHand(tableId: string): Promise<ActionResult<HandEndResu
     return { data: handEnd };
   } catch {
     return { error: 'Failed to end hand. Please try again.' };
+  } finally {
+    await releaseLock(lock);
+  }
+}
+
+// ── resetGame ─────────────────────────────────────────────────────────────────
+
+/**
+ * Reset all players' chips to startingChips and bring the table back to the
+ * 'waiting' lobby so a fresh game can be started.
+ * Only the host may trigger this.
+ */
+export async function resetGame(tableId: string, hostPlayerId: string): Promise<ActionResult> {
+  const parsed = ResetGameSchema.safeParse({ tableId, hostPlayerId });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
+  }
+
+  const lock = await acquireLock(parsed.data.tableId).catch(() => null);
+  if (!lock) return { error: 'Table is busy — please try again shortly.' };
+
+  try {
+    const table = await getTable(parsed.data.tableId);
+    if (!table) return { error: 'Table not found.' };
+
+    try {
+      assertIsHost(table, parsed.data.hostPlayerId);
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+
+    if (table.state !== 'ended') {
+      return { error: 'Game is still in progress.' };
+    }
+
+    const resetPlayers: Record<string, Player> = {};
+    for (const [id, player] of Object.entries(table.players)) {
+      resetPlayers[id] = { ...player, chips: table.settings.startingChips, status: 'active' };
+    }
+
+    const updatedTable = updateTable(table, {
+      state: 'waiting',
+      players: resetPlayers,
+      gameState: null,
+    });
+
+    await setTable(updatedTable);
+    await publishTableUpdated(updatedTable.id, buildPublicTable(updatedTable, null)).catch(() => null);
+
+    return {};
+  } catch {
+    return { error: 'Failed to reset game. Please try again.' };
   } finally {
     await releaseLock(lock);
   }

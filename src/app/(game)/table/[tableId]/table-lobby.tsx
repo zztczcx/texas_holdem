@@ -8,7 +8,7 @@ import { PageContainer } from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { joinTable, startGame } from '@/app/actions';
+import { joinTable, startGame, resetGame } from '@/app/actions';
 import { useTable } from '@/hooks/use-table';
 
 interface TableLobbyProps {
@@ -70,6 +70,18 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
     });
   }
 
+  function handleReset(): void {
+    if (!playerId) return;
+    startTransition(async () => {
+      const result = await resetGame(liveTable.id, playerId);
+      if (result.error) {
+        alert(result.error);
+      } else {
+        router.refresh();
+      }
+    });
+  }
+
   async function handleCopyLink(): Promise<void> {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl).catch(() => null);
@@ -89,7 +101,9 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
               </span>
             </h1>
             <p className="text-sm text-[var(--color-text-muted)] mt-1">
-              Waiting for players &mdash; share the code or link below
+              {liveTable.state === 'ended'
+                ? 'Game over — the host can reset for a new game'
+                : 'Waiting for players \u2014 share the code or link below'}
             </p>
           </div>
           <Badge variant="muted" className="self-start sm:self-auto">
@@ -164,6 +178,23 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                     Need at least 2 players to start.
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Reset for new game (host only, game ended) */}
+            {isHost && liveTable.state === 'ended' && (
+              <div className="mt-6 pt-4 border-t border-[var(--color-border-muted)]">
+                <p className="mb-3 text-sm text-[var(--color-text-muted)]">
+                  Game over! Reset all chip stacks to {liveTable.settings.startingChips.toLocaleString()} and play again.
+                </p>
+                <Button
+                  variant="gold"
+                  size="md"
+                  isLoading={isPending}
+                  onClick={handleReset}
+                >
+                  Reset &amp; Play Again
+                </Button>
               </div>
             )}
 

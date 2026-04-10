@@ -10,4 +10,5 @@ export {
   StartGameSchema,
   BuyBackSchema,
   KickPlayerSchema,
+  ResetGameSchema,
 } from '../../types/api';
