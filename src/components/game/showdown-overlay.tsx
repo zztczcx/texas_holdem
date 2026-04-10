@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { HandEndResult, WinnerResult, Card, HandRank } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -63,10 +63,19 @@ export function ShowdownOverlay({
 }: ShowdownOverlayProps): React.ReactElement {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [buyBackPending, setBuyBackPending] = useState(false);
+  const autoAdvanceTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    setCountdown(COUNTDOWN_SECONDS);
+    autoAdvanceTriggeredRef.current = false;
+  }, [result.handNumber]);
 
   useEffect(() => {
     if (countdown <= 0) {
-      onNextHand?.();
+      if (!autoAdvanceTriggeredRef.current) {
+        autoAdvanceTriggeredRef.current = true;
+        onNextHand?.();
+      }
       return;
     }
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);

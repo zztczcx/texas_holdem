@@ -1,7 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
 import type { Table } from '@/types/game';
 import { Header } from '@/components/layout/header';
 import { PokerTable } from '@/components/game/poker-table';
@@ -11,7 +10,7 @@ import { GameEndScreen } from '@/components/game/game-end-screen';
 import { TurnTimer } from '@/components/game/turn-timer';
 import { ToastContainer, useToast } from '@/components/ui/toast';
 import { useGameState } from '@/hooks/use-game-state';
-import { performAction, endHand, buyBack } from '@/app/actions';
+import { performAction, buyBack } from '@/app/actions';
 import type { ActionType } from '@/types/game';
 
 interface TableGameViewProps {
@@ -23,8 +22,8 @@ interface TableGameViewProps {
  * The in-game view: poker table with live Pusher state + action bar.
  */
 export function TableGameView({ table: initialTable, currentPlayerId }: TableGameViewProps): React.ReactElement {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [dismissedHandNumber, setDismissedHandNumber] = useState<number | null>(null);
   const { toasts, addToast, dismissToast } = useToast();
 
   const initialGameState = initialTable.gameState
@@ -64,6 +63,10 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
   const isGameEnded = liveTableState === 'ended';
   const isShowdown = liveGameState?.stage === 'showdown';
+  const activeHandEndResult =
+    handEndResult && handEndResult.handNumber !== dismissedHandNumber
+      ? handEndResult
+      : null;
 
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
     if (!currentPlayerId || isPending) return;
@@ -90,16 +93,13 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     });
   }
 
-  async function handleNextHand(): Promise<void> {
-    startTransition(async () => {
-      // endHand is now a no-op when performAction already finalized the hand.
-      const result = await endHand(initialTable.id);
-      if (result.error) {
-        addToast({ message: result.error, variant: 'danger' });
-      } else {
-        router.refresh();
-      }
-    });
+  function handleNextHand(): void {
+    if (!activeHandEndResult) {
+      return;
+    }
+
+    setDismissedHandNumber(activeHandEndResult.handNumber);
+    void refresh();
   }
 
   async function handleBuyBack(): Promise<void> {
@@ -175,9 +175,9 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
       )}
 
       {/* Showdown overlay */}
-      {(isShowdown || handEndResult) && handEndResult && (
+      {(isShowdown || activeHandEndResult) && activeHandEndResult && (
         <ShowdownOverlay
-          result={handEndResult}
+          result={activeHandEndResult}
           playerNames={playerNames}
           allowBuyBack={initialTable.settings.allowBuyBack}
           currentPlayerId={currentPlayerId}
