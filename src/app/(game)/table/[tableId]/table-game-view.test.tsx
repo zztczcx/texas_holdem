@@ -13,7 +13,6 @@ const mockAddToast = vi.fn();
 const mockDismissToast = vi.fn();
 const mockPerformAction = vi.fn();
 const mockBuyBack = vi.fn();
-const mockEndHand = vi.fn();
 
 vi.mock('@/hooks/use-game-state', () => ({
   useGameState: (...args: unknown[]) => mockUseGameState(...args),
@@ -22,15 +21,10 @@ vi.mock('@/hooks/use-game-state', () => ({
 vi.mock('@/app/actions', () => ({
   performAction: (...args: unknown[]) => mockPerformAction(...args),
   buyBack: (...args: unknown[]) => mockBuyBack(...args),
-  endHand: (...args: unknown[]) => mockEndHand(...args),
 }));
 
 vi.mock('@/components/layout/header', () => ({
   Header: () => <div>Header</div>,
-}));
-
-vi.mock('@/components/game/poker-table', () => ({
-  PokerTable: () => <div>Poker Table</div>,
 }));
 
 vi.mock('@/components/game/action-bar', () => ({
@@ -162,7 +156,7 @@ function makeHandEndResult(): HandEndResult {
 }
 
 describe('TableGameView', () => {
-  it('dismisses the showdown overlay without calling endHand again', async () => {
+  it('dismisses the inline hand result footer and refreshes once', async () => {
     const user = userEvent.setup();
     mockUseGameState.mockReturnValue({
       tableState: 'playing',
@@ -186,9 +180,8 @@ describe('TableGameView', () => {
       expect(mockRefresh).toHaveBeenCalledTimes(1);
     });
 
-    expect(mockEndHand).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: /hand result/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /next hand/i })).toBeNull();
     });
   });
 });

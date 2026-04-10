@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils/cn';
 import type { Card } from '@/types/game';
+import { CardBack } from './card-back';
 import { PlayingCard } from './playing-card';
 
 export interface CommunityCardsProps {
@@ -28,13 +29,7 @@ export function CommunityCards({ cards, className }: CommunityCardsProps): React
         if (card) {
           return <PlayingCard key={i} card={card} size="md" />;
         }
-        return (
-          <div
-            key={i}
-            aria-hidden="true"
-            className="w-14 h-20 rounded-lg border-2 border-dashed border-[var(--color-border)]/40"
-          />
-        );
+        return <CardBack key={i} size="md" className="opacity-95" />;
       })}
     </div>
   );

@@ -78,7 +78,7 @@ describe('ActionBar', () => {
     expect(screen.getByRole('button', { name: /fold/i })).toBeDefined();
   });
 
-  it('renders Check button when current bet is zero and player has not bet', () => {
+  it('renders Check and Bet when there is no prior bet this street', () => {
     const onAction = vi.fn().mockResolvedValue(undefined);
     render(
       <ActionBar
@@ -89,6 +89,7 @@ describe('ActionBar', () => {
       />,
     );
     expect(screen.getByRole('button', { name: /check/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^bet$/i })).toBeDefined();
   });
 
   it('renders Call button with amount when there is a bet to call', () => {
@@ -101,7 +102,20 @@ describe('ActionBar', () => {
         onAction={onAction}
       />,
     );
-    expect(screen.getByRole('button', { name: /call/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /call \$20/i })).toBeDefined();
+  });
+
+  it('renders All-in button with the player stack amount', () => {
+    const onAction = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ActionBar
+        player={makePlayer({ chips: 1000 })}
+        gameState={makePreFlopState(20, { p2: 20 })}
+        settings={makeSettings()}
+        onAction={onAction}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /all-in \$1,000/i })).toBeDefined();
   });
 
   it('calls onAction with "fold" when Fold is clicked', async () => {
@@ -134,7 +148,7 @@ describe('ActionBar', () => {
     expect(onAction).toHaveBeenCalledWith('check', undefined);
   });
 
-  it('shows RaiseSlider when Raise button is clicked', async () => {
+  it('opens the preset row when Raise is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
     render(
@@ -145,13 +159,13 @@ describe('ActionBar', () => {
         onAction={onAction}
       />,
     );
-    const raiseBtn = screen.getByRole('button', { name: /raise/i });
+    const raiseBtn = screen.getByRole('button', { name: /^raise$/i });
     await user.click(raiseBtn);
-    // After clicking Raise, a Cancel button should appear (from RaiseSlider view)
+    expect(screen.getByRole('button', { name: /\$500/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDefined();
   });
 
-  it('hides RaiseSlider and shows action buttons when Cancel is clicked', async () => {
+  it('updates the confirm button after selecting a preset amount', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
     render(
@@ -162,7 +176,40 @@ describe('ActionBar', () => {
         onAction={onAction}
       />,
     );
-    await user.click(screen.getByRole('button', { name: /raise/i }));
+    await user.click(screen.getByRole('button', { name: /^raise$/i }));
+    await user.click(screen.getByRole('button', { name: /\$500/i }));
+    expect(screen.getByRole('button', { name: /raise \$500/i })).toBeDefined();
+  });
+
+  it('submits the selected raise amount when the confirm button is clicked', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ActionBar
+        player={makePlayer()}
+        gameState={makePreFlopState(20, { p2: 20 })}
+        settings={makeSettings()}
+        onAction={onAction}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /^raise$/i }));
+    await user.click(screen.getByRole('button', { name: /\$500/i }));
+    await user.click(screen.getByRole('button', { name: /raise \$500/i }));
+    expect(onAction).toHaveBeenCalledWith('raise', 500);
+  });
+
+  it('hides the preset row when Cancel is clicked', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ActionBar
+        player={makePlayer()}
+        gameState={makePreFlopState(20, { p2: 20 })}
+        settings={makeSettings()}
+        onAction={onAction}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /^raise$/i }));
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     expect(screen.getByRole('button', { name: /fold/i })).toBeDefined();
   });
