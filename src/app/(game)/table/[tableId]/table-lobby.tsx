@@ -33,11 +33,11 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
     const pusher = getPusherClient();
     const channelName = `presence-table-${initialTable.id}`;
     const channel = pusher.subscribe(channelName);
-    channel.bind('game:started', () => {
+    channel.bind('table:game-started', () => {
       router.refresh();
     });
     return () => {
-      channel.unbind('game:started');
+      channel.unbind('table:game-started');
       pusher.unsubscribe(channelName);
     };
   }, [initialTable.id, router]);

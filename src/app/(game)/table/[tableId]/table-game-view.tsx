@@ -31,7 +31,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     ? { ...initialTable.gameState, deck: null as null }
     : null;
 
-  const { gameState, livePlayers, handEndResult } = useGameState(
+  const { gameState, livePlayers, handEndResult, refresh } = useGameState(
     initialTable.id,
     currentPlayerId,
     initialGameState,
@@ -66,6 +66,10 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
       });
       if (result.error) {
         addToast({ message: result.error, variant: 'danger' });
+      } else {
+        // Immediately pull fresh state from the server so the actor's UI
+        // updates without waiting for the next Pusher delivery.
+        await refresh();
       }
     });
   }
