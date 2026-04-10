@@ -123,7 +123,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             variant="primary"
             size="md"
             isLoading={isPending}
-            onClick={() => dispatch('call')}
+            onClick={() => dispatch('call', callAmount)}
             className="w-full justify-center"
           >
             Call {formatCurrency(callAmount)}

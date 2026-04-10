@@ -282,7 +282,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                     <HandResult
                       rank={displayBestHand.rank}
                       description={displayBestHand.rankName}
-                      isWinner={Boolean(activeHandEndResult)}
+                      isWinner={isCurrentPlayerWinner}
                       className="order-3 w-full border-[var(--color-border)] bg-[var(--color-surface)] sm:order-none sm:w-auto"
                     />
                   )}
@@ -581,7 +581,7 @@ function buildPlayerActionBadge(
     case 'check':
       return { label: 'CHECK', tone: 'neutral', key };
     case 'call':
-      return { label: `CALL ${formatCurrency(committed || currentBet)}`, tone: 'call', key };
+      return { label: `CALL ${formatCurrency(committed || (action.amount ?? 0))}`, tone: 'call', key };
     case 'raise': {
       const verb = (previousState?.currentBet ?? 0) === 0 ? 'BET' : 'RAISE';
       const amount = committed || action.amount || currentBet;
@@ -630,11 +630,14 @@ function getDisplayHandResult(
   currentPlayerId: string | null,
 ): PokerHandResult | null {
   if (handEndResult) {
-    const currentPlayerWinner = currentPlayerId
-      ? handEndResult.winners.find((winner) => winner.playerId === currentPlayerId && winner.hand)
-      : undefined;
-
-    return currentPlayerWinner?.hand ?? handEndResult.winners.find((winner) => winner.hand)?.hand ?? null;
+    // Prefer showing the current player's OWN best hand so they understand their result.
+    // bestHand is populated for all non-folded players by computeHandEnd.
+    if (currentPlayerId) {
+      const myHand = handEndResult.playerHands[currentPlayerId]?.bestHand;
+      if (myHand) return myHand;
+    }
+    // Fallback: observer or folded player — show winner's hand
+    return handEndResult.winners.find((winner) => winner.hand)?.hand ?? null;
   }
 
   if (!gameState) {

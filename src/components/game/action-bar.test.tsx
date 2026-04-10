@@ -197,4 +197,36 @@ describe('ActionBar', () => {
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     expect(screen.getByRole('button', { name: /fold/i })).toBeDefined();
   });
+
+  it('dispatches call with the exact call amount as second argument', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn().mockResolvedValue(undefined);
+    // currentBet=20, player has bet 0 → callAmount = 20 - 0 = 20
+    render(
+      <ActionBar
+        player={makePlayer({ chips: 500 })}
+        gameState={makePreFlopState(20, { p2: 20 })}
+        settings={makeSettings()}
+        onAction={onAction}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /call \$20/i }));
+    expect(onAction).toHaveBeenCalledWith('call', 20);
+  });
+
+  it('dispatches call with partial amount when player already contributed some chips', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn().mockResolvedValue(undefined);
+    // currentBet=20, player already bet 10 → callAmount = 20 - 10 = 10
+    render(
+      <ActionBar
+        player={makePlayer({ chips: 500 })}
+        gameState={makePreFlopState(20, { p1: 10, p2: 20 })}
+        settings={makeSettings()}
+        onAction={onAction}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /call \$10/i }));
+    expect(onAction).toHaveBeenCalledWith('call', 10);
+  });
 });

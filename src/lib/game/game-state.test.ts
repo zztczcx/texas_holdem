@@ -276,6 +276,90 @@ describe('computeHandEnd', () => {
     computeHandEnd(state, players, [{ playerId: 'p1', amount: 500 }]);
     expect(players['p1']!.chips).toBe(originalChips);
   });
+
+  it('populates bestHand for non-folded players at showdown', () => {
+    const players = twoPlayerTable();
+    // Build a showdown state with 5 community cards and known hole cards
+    const stateAtShowdown: GameState = {
+      stage: 'showdown',
+      dealerSeatIndex: 0,
+      smallBlindSeatIndex: 1,
+      bigBlindSeatIndex: 0,
+      currentSeatIndex: 0,
+      pot: 200,
+      sidePots: [],
+      communityCards: [
+        { suit: 'spades', rank: 'A' },
+        { suit: 'hearts', rank: 'K' },
+        { suit: 'diamonds', rank: 'Q' },
+        { suit: 'clubs', rank: 'J' },
+        { suit: 'spades', rank: '10' },
+      ],
+      deck: [],
+      playerHands: {
+        p1: { holeCards: [{ suit: 'hearts', rank: 'A' }, { suit: 'diamonds', rank: 'A' }] },
+        p2: { holeCards: [{ suit: 'clubs', rank: '2' }, { suit: 'hearts', rank: '3' }] },
+      },
+      currentBet: 0,
+      raiseCount: 0,
+      minimumRaise: 20,
+      bettingRound: { bets: {}, actedPlayers: new Set() },
+      lastAction: null,
+      handNumber: 2,
+    };
+    const result = computeHandEnd(
+      stateAtShowdown,
+      players,
+      [{ playerId: 'p1', amount: 200 }],
+    );
+    // Both players are active (not folded), so both should have bestHand set
+    expect(result.playerHands['p1']?.bestHand).toBeDefined();
+    expect(result.playerHands['p2']?.bestHand).toBeDefined();
+    // p1 has three Aces + A K Q J 10 → Straight (A-K-Q-J-10) or better
+    expect(result.playerHands['p1']?.bestHand?.rankName).toBeDefined();
+  });
+
+  it('does not populate bestHand for folded players', () => {
+    const players = {
+      ...twoPlayerTable(),
+      p2: makePlayer('p2', 1, 1000, { status: 'folded' }),
+    };
+    const stateAtEnd: GameState = {
+      stage: 'showdown',
+      dealerSeatIndex: 0,
+      smallBlindSeatIndex: 1,
+      bigBlindSeatIndex: 0,
+      currentSeatIndex: 0,
+      pot: 200,
+      sidePots: [],
+      communityCards: [
+        { suit: 'spades', rank: 'A' },
+        { suit: 'hearts', rank: 'K' },
+        { suit: 'diamonds', rank: 'Q' },
+        { suit: 'clubs', rank: 'J' },
+        { suit: 'spades', rank: '10' },
+      ],
+      deck: [],
+      playerHands: {
+        p1: { holeCards: [{ suit: 'hearts', rank: 'A' }, { suit: 'diamonds', rank: 'A' }] },
+        p2: { holeCards: [{ suit: 'clubs', rank: '2' }, { suit: 'hearts', rank: '3' }] },
+      },
+      currentBet: 0,
+      raiseCount: 0,
+      minimumRaise: 20,
+      bettingRound: { bets: {}, actedPlayers: new Set() },
+      lastAction: null,
+      handNumber: 2,
+    };
+    const result = computeHandEnd(
+      stateAtEnd,
+      players,
+      [{ playerId: 'p1', amount: 200 }],
+    );
+    // p1 (active) gets bestHand; p2 (folded) does not
+    expect(result.playerHands['p1']?.bestHand).toBeDefined();
+    expect(result.playerHands['p2']?.bestHand).toBeUndefined();
+  });
 });
 
 // ── Full hand simulation ──────────────────────────────────────────────────────

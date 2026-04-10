@@ -302,6 +302,8 @@ function distributeSidePots(
 
 /**
  * Compute the HandEndResult — chip awards and updated chip counts.
+ * Also evaluates and stores bestHand for every player who reached showdown
+ * (i.e. did not fold), so the client can display hand ranks in the result screen.
  */
 export function computeHandEnd(
   state: GameState,
@@ -318,12 +320,27 @@ export function computeHandEnd(
     playerChips[winner.playerId] = (playerChips[winner.playerId] ?? 0) + winner.amount;
   }
 
+  // Populate bestHand for players who did not fold (reached showdown or won by folds)
+  const evaluatedHands: Record<string, PlayerHand | undefined> = {};
+  for (const [pid, hand] of Object.entries(state.playerHands)) {
+    const playerStatus = players[pid]?.status;
+    if (hand?.holeCards && playerStatus !== 'folded') {
+      evaluatedHands[pid] = {
+        ...hand,
+        bestHand: getBestHand(hand.holeCards, state.communityCards),
+      };
+    } else {
+      // Folded players: keep their hand record but without bestHand
+      evaluatedHands[pid] = hand ? { holeCards: hand.holeCards } : undefined;
+    }
+  }
+
   return {
     winners,
     playerChips,
     handNumber: state.handNumber,
     pot: state.pot,
     communityCards: state.communityCards,
-    playerHands: state.playerHands,
+    playerHands: evaluatedHands,
   };
 }
