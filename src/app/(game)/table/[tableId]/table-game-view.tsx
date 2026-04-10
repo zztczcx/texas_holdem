@@ -4,10 +4,12 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { buyBack, performAction } from '@/app/actions';
 import { cn } from '@/lib/utils/cn';
 import { ActionBar } from '@/components/game/action-bar';
+import { CardBack } from '@/components/game/card-back';
 import { CommunityCards } from '@/components/game/community-cards';
 import { GameEndScreen } from '@/components/game/game-end-screen';
 import { HandResult } from '@/components/game/hand-result';
 import { PlayerRow, type PlayerRowActionBadge } from '@/components/game/player-row';
+import { PlayingCard } from '@/components/game/playing-card';
 import { TurnTimer } from '@/components/game/turn-timer';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -30,6 +32,9 @@ interface TableGameViewProps {
 type PlayerActionHistory = Record<number, Record<string, PlayerRowActionBadge>>;
 // Tracks cumulative chips wagered per player per hand (across all betting rounds)
 type CumulativeBets = Record<number, Record<string, number>>;
+
+// Deterministic animal emoji per seat — mirrors player-row.tsx
+const AVATAR_ANIMALS_TABLE = ['🦊', '🐻', '🐯', '🦁', '🐼', '🐺', '🦝', '🦅', '🦉'] as const;
 
 /**
  * The in-game view: top board strip, scrollable player list, and sticky action footer.
@@ -166,6 +171,18 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     displayCurrentPlayerChips === 0,
   );
 
+  // Derive last-action announcement data (null when hand result shown, or no action yet)
+  const lastActionData = (() => {
+    if (activeHandEndResult || !liveGameState?.lastAction) return null;
+    const action = liveGameState.lastAction;
+    const player = livePlayers[action.playerId] ?? null;
+    const badge = displayHandNumber != null
+      ? (actionHistoryByHand[displayHandNumber]?.[action.playerId] ?? null)
+      : null;
+    if (!player || !badge) return null;
+    return { action, player, badge };
+  })();
+
   async function handleAction(type: ActionType, amount?: number): Promise<void> {
     if (!currentPlayerId || isPending) return;
 
@@ -289,6 +306,39 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
             <div className="relative min-h-0 flex-1 overflow-hidden">
               <div className="h-full overflow-y-auto bg-[linear-gradient(180deg,rgba(20,38,26,0.94),rgba(13,27,18,0.98))] px-3 py-3 sm:px-5 sm:py-5">
+                {/* Last-action announcement banner */}
+                {lastActionData && (
+                  <div
+                    key={lastActionData.action.timestamp}
+                    className={cn(
+                      'mb-3 flex items-center gap-3 rounded-2xl border px-4 py-2.5 animate-action-announce',
+                      lastActionData.badge.tone === 'raise' || lastActionData.badge.tone === 'all-in'
+                        ? 'border-[var(--color-gold)]/40 bg-[var(--color-gold)]/10 shadow-[0_0_20px_rgba(212,175,55,0.2)]'
+                        : lastActionData.badge.tone === 'danger'
+                          ? 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/8'
+                          : 'border-[var(--color-border-muted)] bg-[var(--color-border-muted)]/30',
+                    )}
+                  >
+                    <span className="shrink-0 text-xl leading-none" aria-hidden="true">
+                      {AVATAR_ANIMALS_TABLE[lastActionData.player.seatIndex % AVATAR_ANIMALS_TABLE.length]}
+                    </span>
+                    <span className="text-sm font-medium text-[var(--color-text-muted)]">
+                      {lastActionData.player.name}
+                    </span>
+                    <span
+                      className={cn(
+                        'ml-auto text-sm font-bold uppercase tracking-[0.14em]',
+                        lastActionData.badge.tone === 'raise' || lastActionData.badge.tone === 'all-in'
+                          ? 'text-[var(--color-gold)]'
+                          : lastActionData.badge.tone === 'danger'
+                            ? 'text-[var(--color-danger)]'
+                            : 'text-[var(--color-text-muted)]',
+                      )}
+                    >
+                      {lastActionData.badge.label}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col gap-3">
                   {orderedPlayers.map((player) => {
                     const resultHand = activeHandEndResult?.playerHands[player.id];
@@ -328,38 +378,136 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                 </div>
               </div>
 
-              {/* Hand result pop-up overlay */}
-              {activeHandEndResult && currentPlayerId && (
-                <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-canvas)]/75 p-4 backdrop-blur-sm animate-modal-in">
+              {/* Showdown bottom sheet — all users (players + observers).
+                  Per Texas Hold'em rules: all players who didn't fold must show hole cards. */}
+              {activeHandEndResult && (
+                <div
+                  key={activeHandEndResult.handNumber}
+                  className="absolute bottom-0 left-0 right-0 z-10 animate-slide-up"
+                >
+                  {/* Gradient scrim above the sheet */}
+                  <div className="pointer-events-none absolute bottom-full left-0 right-0 h-28 bg-gradient-to-t from-[rgba(13,27,18,0.85)] to-transparent" />
+
                   <div
                     className={cn(
-                      'w-full max-w-xs rounded-[28px] border px-6 py-7 text-center shadow-[0_24px_64px_rgba(0,0,0,0.6)]',
+                      'relative max-h-[72vh] overflow-y-auto rounded-t-[28px] border-t shadow-[0_-16px_48px_rgba(0,0,0,0.72)]',
                       isCurrentPlayerWinner
-                        ? 'border-[var(--color-gold)]/40 bg-[var(--color-felt-dark)] shadow-[0_0_0_2px_rgba(212,175,55,0.12)]'
+                        ? 'border-[var(--color-gold)]/35 bg-gradient-to-b from-[var(--color-felt-dark)] to-[var(--color-surface)]'
                         : 'border-[var(--color-border)] bg-[var(--color-surface)]',
                     )}
                   >
-                    {isCurrentPlayerWinner ? (
-                      <>
-                        <p className="mb-1 text-4xl select-none" aria-hidden="true">🏆</p>
-                        <h2 className="text-2xl font-bold text-[var(--color-gold)]">You won!</h2>
-                        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                          You took the pot of{' '}
-                          <span className="font-semibold text-[var(--color-gold)]">
-                            {formatCurrency(currentPlayerWinAmount)}
-                          </span>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="mb-1 text-4xl select-none" aria-hidden="true">🃏</p>
-                        <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Better luck next time</h2>
-                        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                          {formatWinnersText(activeHandEndResult, playerNames)}
-                        </p>
-                      </>
-                    )}
-                    <div className="mt-6 flex flex-col gap-2">
+                    {/* Drag handle */}
+                    <div className="flex justify-center pb-1 pt-3">
+                      <div className="h-1 w-10 rounded-full bg-[var(--color-border)]" />
+                    </div>
+
+                    {/* Result headline */}
+                    <div className="px-5 pb-4 pt-1 text-center">
+                      {currentPlayerId ? (
+                        isCurrentPlayerWinner ? (
+                          <>
+                            <p className="text-3xl select-none" aria-hidden="true">🏆</p>
+                            <h2 className="mt-1 text-xl font-bold text-[var(--color-gold)]">You won!</h2>
+                            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                              You took{' '}
+                              <span className="font-semibold text-[var(--color-gold)]">
+                                {formatCurrency(currentPlayerWinAmount)}
+                              </span>
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-3xl select-none" aria-hidden="true">🃏</p>
+                            <h2 className="mt-1 text-xl font-bold text-[var(--color-text-primary)]">
+                              Better luck next time
+                            </h2>
+                            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                              {formatWinnersText(activeHandEndResult, playerNames)}
+                            </p>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          <p className="text-3xl select-none" aria-hidden="true">🃏</p>
+                          <h2 className="mt-1 text-xl font-bold text-[var(--color-text-primary)]">
+                            Hand #{activeHandEndResult.handNumber} complete
+                          </h2>
+                          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                            {formatWinnersText(activeHandEndResult, playerNames)}
+                          </p>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Card reveal — who showed what (Texas Hold'em showdown rules) */}
+                    <div className="px-4 pb-3 sm:px-5">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
+                        Showdown
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {orderedPlayers.map((player) => {
+                          const pHand = activeHandEndResult.playerHands[player.id];
+                          const isWinnerRow = winnerIds.has(player.id);
+                          const winAmount = activeHandEndResult.winners.find((w) => w.playerId === player.id)?.amount;
+                          const hasFolded = !pHand?.holeCards;
+                          const animalEmoji = AVATAR_ANIMALS_TABLE[player.seatIndex % AVATAR_ANIMALS_TABLE.length];
+
+                          return (
+                            <div
+                              key={player.id}
+                              className={cn(
+                                'flex items-center gap-3 rounded-2xl border px-3 py-2.5',
+                                isWinnerRow
+                                  ? 'border-[var(--color-gold)]/35 bg-[var(--color-gold)]/8 shadow-[0_0_12px_rgba(212,175,55,0.12)]'
+                                  : hasFolded
+                                    ? 'border-[var(--color-border-muted)] bg-[var(--color-canvas)]/30 opacity-50'
+                                    : 'border-[var(--color-border-muted)] bg-[var(--color-canvas)]/50',
+                              )}
+                            >
+                              <span className="shrink-0 text-xl leading-none" aria-hidden="true">
+                                {animalEmoji}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-baseline gap-1.5">
+                                  <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                                    {player.name}
+                                  </p>
+                                  {player.id === currentPlayerId && (
+                                    <span className="shrink-0 text-xs text-[var(--color-text-muted)]">(you)</span>
+                                  )}
+                                  {isWinnerRow && winAmount != null && (
+                                    <span className="ml-auto shrink-0 text-sm font-bold text-[var(--color-gold)]">
+                                      +{formatCurrency(winAmount)}
+                                    </span>
+                                  )}
+                                </div>
+                                {pHand?.bestHand ? (
+                                  <p className="text-xs text-[var(--color-gold)]/80">{pHand.bestHand.rankName}</p>
+                                ) : hasFolded ? (
+                                  <p className="text-xs italic text-[var(--color-text-muted)]/60">Folded</p>
+                                ) : null}
+                              </div>
+                              <div className="flex shrink-0 gap-1">
+                                {pHand?.holeCards ? (
+                                  <>
+                                    <PlayingCard card={pHand.holeCards[0]} size="sm" />
+                                    <PlayingCard card={pHand.holeCards[1]} size="sm" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <CardBack size="sm" className="opacity-30" />
+                                    <CardBack size="sm" className="opacity-30" />
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="sticky bottom-0 flex flex-col gap-2 border-t border-[var(--color-border-muted)] bg-[var(--color-surface)]/98 px-4 py-4 backdrop-blur-sm sm:px-5">
                       {showBuyBack && (
                         <Button variant="gold" size="sm" onClick={() => void handleBuyBack()}>
                           Buy Back In
@@ -373,25 +521,6 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                 </div>
               )}
             </div>
-
-            {/* Bottom footer: shown for observers (no personal popup), hidden when popup is visible */}
-            {activeHandEndResult && !currentPlayerId && (
-              <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]/96 px-3 py-3 sm:px-5 sm:py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-[var(--color-text-muted)]">
-                      {formatWinnersText(activeHandEndResult, playerNames)}
-                    </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--color-text-muted)]/80">
-                      Hand #{activeHandEndResult.handNumber} complete
-                    </p>
-                  </div>
-                  <Button variant="primary" size="sm" onClick={() => void handleNextHand()}>
-                    Next Hand
-                  </Button>
-                </div>
-              </div>
-            )}
 
             {isMyTurn && currentPlayer && !activeHandEndResult && (
               <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]/96 px-3 py-3 sm:px-5 sm:py-4">
@@ -446,24 +575,25 @@ function buildPlayerActionBadge(
   const previousBet = previousState?.bettingRound.bets[action.playerId] ?? 0;
   const currentBet = currentState.bettingRound.bets[action.playerId] ?? 0;
   const committed = Math.max(0, currentBet - previousBet);
+  const key = `${action.timestamp}:${action.playerId}`;
 
   switch (action.type) {
     case 'check':
-      return { label: 'CHECK', tone: 'neutral' };
+      return { label: 'CHECK', tone: 'neutral', key };
     case 'call':
-      return { label: `CALL ${formatCurrency(committed || currentBet)}`, tone: 'call' };
+      return { label: `CALL ${formatCurrency(committed || currentBet)}`, tone: 'call', key };
     case 'raise': {
       const verb = (previousState?.currentBet ?? 0) === 0 ? 'BET' : 'RAISE';
       const amount = committed || action.amount || currentBet;
-      return { label: `${verb} ${formatCurrency(amount)}`, tone: 'raise' };
+      return { label: `${verb} ${formatCurrency(amount)}`, tone: 'raise', key };
     }
     case 'allIn':
-      return { label: 'ALL-IN', tone: 'all-in' };
+      return { label: 'ALL-IN', tone: 'all-in', key };
     case 'fold':
-      return { label: 'FOLD', tone: 'danger' };
+      return { label: 'FOLD', tone: 'danger', key };
   }
 
-  return { label: 'ACTION', tone: 'neutral' };
+  return { label: 'ACTION', tone: 'neutral', key };
 }
 
 function pruneActionHistory(history: PlayerActionHistory): PlayerActionHistory {

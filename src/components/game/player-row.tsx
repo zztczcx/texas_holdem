@@ -8,6 +8,8 @@ export type PlayerRowActionTone = 'neutral' | 'call' | 'raise' | 'danger' | 'all
 export interface PlayerRowActionBadge {
   label: string;
   tone: PlayerRowActionTone;
+  /** Unique per action — used to re-trigger entrance animation */
+  key?: string;
 }
 
 export interface PlayerRowProps {
@@ -45,10 +47,16 @@ const AVATAR_PALETTES = [
 const ACTION_BADGE_CLASSES: Record<PlayerRowActionTone, string> = {
   neutral: 'bg-[var(--color-border-muted)]/70 text-[var(--color-text-muted)] border-[var(--color-border)]',
   call: 'bg-[var(--color-felt)]/18 text-[var(--color-text-primary)] border-[var(--color-felt)]/35',
-  raise: 'bg-[var(--color-gold)]/14 text-[var(--color-gold)] border-[var(--color-gold)]/30',
+  raise: 'bg-[var(--color-gold)]/22 text-[var(--color-gold)] border-[var(--color-gold)]/55 shadow-[0_0_14px_rgba(212,175,55,0.32)]',
   danger: 'bg-[var(--color-danger)]/18 text-[var(--color-danger)] border-[var(--color-danger)]/28',
-  'all-in': 'bg-[var(--color-gold)]/18 text-[var(--color-gold)] border-[var(--color-gold)]/34',
+  'all-in': 'bg-[var(--color-gold)]/28 text-[var(--color-gold)] border-[var(--color-gold)]/65 shadow-[0_0_20px_rgba(212,175,55,0.45)]',
   winner: 'bg-[var(--color-gold)]/18 text-[var(--color-gold)] border-[var(--color-gold)]/30',
+};
+
+// Larger pill + bolder text for high-impact actions
+const ACTION_BADGE_SIZE: Partial<Record<PlayerRowActionTone, string>> = {
+  raise: 'px-4 py-1.5 text-sm',
+  'all-in': 'px-4 py-1.5 text-sm font-bold',
 };
 
 export function PlayerRow({
@@ -144,7 +152,7 @@ export function PlayerRow({
             )}
           </div>
           {actionBadge && (
-            <div className="mt-2 sm:hidden">
+            <div key={actionBadge.key ?? actionBadge.label} className="mt-2 sm:hidden">
               <ActionBadge badge={actionBadge} />
             </div>
           )}
@@ -152,7 +160,7 @@ export function PlayerRow({
 
         <div className="flex items-center justify-end gap-3">
           {actionBadge && (
-            <div className="hidden sm:block">
+            <div key={actionBadge.key ?? actionBadge.label} className="hidden sm:block">
               <ActionBadge badge={actionBadge} />
             </div>
           )}
@@ -200,10 +208,12 @@ function buildAriaLabel(name: string, stack: number, options: BuildAriaLabelOpti
 }
 
 function ActionBadge({ badge }: { badge: PlayerRowActionBadge }): React.ReactElement {
+  const sizeClass = ACTION_BADGE_SIZE[badge.tone] ?? 'px-3 py-1 text-xs';
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.16em] uppercase',
+        'inline-flex items-center rounded-full border font-semibold tracking-[0.14em] uppercase animate-badge-pop',
+        sizeClass,
         ACTION_BADGE_CLASSES[badge.tone],
       )}
     >
