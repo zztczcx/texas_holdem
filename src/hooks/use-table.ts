@@ -85,7 +85,7 @@ export function useTable(
 
     const pusher = getPusherClient();
     const connection = pusher.connection;
-    const channelName = `presence-table-${tableId}`;
+    const channelName = `table-${tableId}`;
     const channel: Channel = pusher.subscribe(channelName);
 
     const handleConnectionStateChange = (states: { previous: string; current: string }) => {

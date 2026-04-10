@@ -137,7 +137,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     <>
       <Header />
       {liveGameState && (
-        <main className="flex-1 min-h-0 flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-2 sm:py-4 sm:px-4 md:px-6">
+        <main className="min-h-dvh flex flex-col items-stretch bg-[var(--color-canvas)] px-2 py-2 sm:py-4 sm:px-4 md:px-6">
           {/* Turn timer (top of page when it's your turn) */}
           {isMyTurn && initialTable.settings.turnTimerSeconds > 0 && (
             <div className="flex justify-center mb-2">

@@ -38,6 +38,10 @@ export function tableChannel(tableId: string): string {
   return `presence-table-${tableId}`;
 }
 
+export function lobbyChannel(tableId: string): string {
+  return `table-${tableId}`;
+}
+
 // ── Event payloads ────────────────────────────────────────────────────────────
 
 export type TableStateUpdatePayload = GameSyncSnapshot;
@@ -125,7 +129,7 @@ export async function publishTableUpdated(
   table: PublicTable,
 ): Promise<void> {
   const pusher = getPusherServer();
-  await pusher.trigger(tableChannel(tableId), 'table:updated', table);
+  await pusher.trigger(lobbyChannel(tableId), 'table:updated', table);
 }
 
 /**

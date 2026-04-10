@@ -154,11 +154,11 @@ describe('useTable', () => {
     const { result } = renderHook(() => useTable('abc123', initialTable));
 
     await waitFor(() => {
-      expect(mockPusher.hasChannel('presence-table-abc123')).toBe(true);
+      expect(mockPusher.hasChannel('table-abc123')).toBe(true);
     });
 
     act(() => {
-      mockPusher.channel('presence-table-abc123').emit('pusher:subscription_succeeded');
+      mockPusher.channel('table-abc123').emit('pusher:subscription_succeeded');
     });
 
     await waitFor(() => {
@@ -185,10 +185,10 @@ describe('useTable', () => {
     const { result } = renderHook(() => useTable('abc123', initialTable));
 
     await waitFor(() => {
-      expect(mockPusher.hasChannel('presence-table-abc123')).toBe(true);
+      expect(mockPusher.hasChannel('table-abc123')).toBe(true);
     });
 
-    const tableChannel = mockPusher.channel('presence-table-abc123');
+    const tableChannel = mockPusher.channel('table-abc123');
 
     act(() => {
       tableChannel.emit('table:updated', makeTable(5, {
