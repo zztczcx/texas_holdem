@@ -322,5 +322,8 @@ export function computeHandEnd(
     winners,
     playerChips,
     handNumber: state.handNumber,
+    pot: state.pot,
+    communityCards: state.communityCards,
+    playerHands: state.playerHands,
   };
 }

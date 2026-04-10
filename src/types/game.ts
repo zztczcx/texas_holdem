@@ -134,6 +134,13 @@ export interface ShowdownResult {
 // Hand end result
 export interface HandEndResult {
   winners: readonly WinnerResult[];
+  /** Chips for every player AFTER winnings are awarded */
   playerChips: Record<string, number>;
   handNumber: number;
+  /** Total pot that was distributed this hand */
+  pot: number;
+  /** Community cards on the board at hand end */
+  communityCards: readonly Card[];
+  /** Hole cards for all players who reached showdown; absent for folders */
+  playerHands: Record<string, PlayerHand | undefined>;
 }
