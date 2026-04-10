@@ -39,7 +39,7 @@ describe('PlayingCard', () => {
   it('renders with sm size class applied', () => {
     const { container } = render(<PlayingCard card={{ rank: '5', suit: 'spades' }} size="sm" />);
     const article = container.querySelector('article');
-    expect(article?.className).toContain('w-9');
+    expect(article?.className).toContain('w-10');
   });
 
   it('renders with lg size class applied', () => {

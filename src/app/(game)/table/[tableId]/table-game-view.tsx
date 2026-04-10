@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { buyBack, performAction } from '@/app/actions';
+import { cn } from '@/lib/utils/cn';
 import { ActionBar } from '@/components/game/action-bar';
 import { CommunityCards } from '@/components/game/community-cards';
 import { GameEndScreen } from '@/components/game/game-end-screen';
@@ -124,6 +125,10 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     Object.values({ ...knownPlayers, ...livePlayers }).map((player) => [player.id, player.name]),
   );
   const winnerIds = new Set(activeHandEndResult?.winners.map((winner) => winner.playerId) ?? []);
+  const isCurrentPlayerWinner = currentPlayerId ? winnerIds.has(currentPlayerId) : false;
+  const currentPlayerWinAmount = currentPlayerId
+    ? activeHandEndResult?.winners.find((w) => w.playerId === currentPlayerId)?.amount ?? 0
+    : 0;
   const displayHandNumber = activeHandEndResult?.handNumber ?? liveGameState?.handNumber ?? null;
   const displayCommunityCards = activeHandEndResult?.communityCards ?? liveGameState?.communityCards ?? [];
   const displayPot = activeHandEndResult?.pot ?? liveGameState?.pot ?? 0;
@@ -261,37 +266,95 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(20,38,26,0.94),rgba(13,27,18,0.98))] px-3 py-3 sm:px-5 sm:py-5">
-              <div className="flex flex-col gap-3">
-                {orderedPlayers.map((player) => {
-                  const resultHand = activeHandEndResult?.playerHands[player.id];
-                  const liveHand = liveGameState.playerHands[player.id];
-                  const showWinnerCards = Boolean(activeHandEndResult && winnerIds.has(player.id));
-                  const showOwnCards = !activeHandEndResult && currentPlayerId === player.id;
-                  const displayStack = activeHandEndResult?.playerChips[player.id] ?? livePlayers[player.id]?.chips ?? player.chips;
-                  const isDimmed = activeHandEndResult
-                    ? !winnerIds.has(player.id)
-                    : player.status === 'folded' || player.status === 'disconnected' || player.status === 'sitOut';
+            <div className="relative min-h-0 flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto bg-[linear-gradient(180deg,rgba(20,38,26,0.94),rgba(13,27,18,0.98))] px-3 py-3 sm:px-5 sm:py-5">
+                <div className="flex flex-col gap-3">
+                  {orderedPlayers.map((player) => {
+                    const resultHand = activeHandEndResult?.playerHands[player.id];
+                    const liveHand = liveGameState.playerHands[player.id];
+                    const displayStack = activeHandEndResult?.playerChips[player.id] ?? livePlayers[player.id]?.chips ?? player.chips;
+                    const isDimmed = activeHandEndResult
+                      ? !winnerIds.has(player.id)
+                      : player.status === 'folded' || player.status === 'disconnected' || player.status === 'sitOut';
+                    // At showdown, reveal cards for all players who reached it (not folders)
+                    const showHoleCards = activeHandEndResult
+                      ? resultHand?.holeCards != null
+                      : currentPlayerId === player.id;
+                    const currentRoundBet = activeHandEndResult
+                      ? undefined
+                      : liveGameState.bettingRound.bets[player.id];
+                    const playerRole = getPlayerRole(player.seatIndex, liveGameState);
 
-                  return (
-                    <PlayerRow
-                      key={player.id}
-                      player={player}
-                      stack={displayStack}
-                      isSelf={player.id === currentPlayerId}
-                      isActive={!activeHandEndResult && player.id === activePlayerId}
-                      isWinner={winnerIds.has(player.id)}
-                      isDimmed={isDimmed}
-                      actionBadge={displayActionHistory[player.id] ?? null}
-                      holeCards={activeHandEndResult ? resultHand?.holeCards ?? null : liveHand?.holeCards ?? null}
-                      showHoleCards={showWinnerCards || showOwnCards}
-                    />
-                  );
-                })}
+                    return (
+                      <PlayerRow
+                        key={player.id}
+                        player={player}
+                        stack={displayStack}
+                        isSelf={player.id === currentPlayerId}
+                        isActive={!activeHandEndResult && player.id === activePlayerId}
+                        isWinner={winnerIds.has(player.id)}
+                        isDimmed={isDimmed}
+                        isDealer={playerRole.isDealer}
+                        isSmallBlind={playerRole.isSmallBlind}
+                        isBigBlind={playerRole.isBigBlind}
+                        currentRoundBet={currentRoundBet}
+                        actionBadge={displayActionHistory[player.id] ?? null}
+                        holeCards={resultHand?.holeCards ?? liveHand?.holeCards ?? null}
+                        showHoleCards={showHoleCards}
+                      />
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Hand result pop-up overlay */}
+              {activeHandEndResult && currentPlayerId && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-canvas)]/75 p-4 backdrop-blur-sm animate-modal-in">
+                  <div
+                    className={cn(
+                      'w-full max-w-xs rounded-[28px] border px-6 py-7 text-center shadow-[0_24px_64px_rgba(0,0,0,0.6)]',
+                      isCurrentPlayerWinner
+                        ? 'border-[var(--color-gold)]/40 bg-[var(--color-felt-dark)] shadow-[0_0_0_2px_rgba(212,175,55,0.12)]'
+                        : 'border-[var(--color-border)] bg-[var(--color-surface)]',
+                    )}
+                  >
+                    {isCurrentPlayerWinner ? (
+                      <>
+                        <p className="mb-1 text-4xl select-none" aria-hidden="true">🏆</p>
+                        <h2 className="text-2xl font-bold text-[var(--color-gold)]">You won!</h2>
+                        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                          You took the pot of{' '}
+                          <span className="font-semibold text-[var(--color-gold)]">
+                            {formatCurrency(currentPlayerWinAmount)}
+                          </span>
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="mb-1 text-4xl select-none" aria-hidden="true">🃏</p>
+                        <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Better luck next time</h2>
+                        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                          {formatWinnersText(activeHandEndResult, playerNames)}
+                        </p>
+                      </>
+                    )}
+                    <div className="mt-6 flex flex-col gap-2">
+                      {showBuyBack && (
+                        <Button variant="gold" size="sm" onClick={() => void handleBuyBack()}>
+                          Buy Back In
+                        </Button>
+                      )}
+                      <Button variant="primary" size="sm" onClick={() => void handleNextHand()}>
+                        Next Hand
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {activeHandEndResult && (
+            {/* Bottom footer: shown for observers (no personal popup), hidden when popup is visible */}
+            {activeHandEndResult && !currentPlayerId && (
               <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]/96 px-3 py-3 sm:px-5 sm:py-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -302,17 +365,9 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                       Hand #{activeHandEndResult.handNumber} complete
                     </p>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    {showBuyBack && (
-                      <Button variant="gold" size="sm" onClick={() => void handleBuyBack()}>
-                        Buy Back In
-                      </Button>
-                    )}
-                    <Button variant="primary" size="sm" onClick={() => void handleNextHand()}>
-                      Next Hand
-                    </Button>
-                  </div>
+                  <Button variant="primary" size="sm" onClick={() => void handleNextHand()}>
+                    Next Hand
+                  </Button>
                 </div>
               </div>
             )}
@@ -451,4 +506,18 @@ function formatWinnersText(result: HandEndResult, playerNames: Record<string, st
 
 function formatCurrency(amount: number): string {
   return `$${amount.toLocaleString()}`;
+}
+
+interface PlayerRole {
+  isDealer: boolean;
+  isSmallBlind: boolean;
+  isBigBlind: boolean;
+}
+
+function getPlayerRole(seatIndex: number, gameState: FilteredGameState): PlayerRole {
+  return {
+    isDealer: seatIndex === gameState.dealerSeatIndex,
+    isSmallBlind: seatIndex === gameState.smallBlindSeatIndex,
+    isBigBlind: seatIndex === gameState.bigBlindSeatIndex,
+  };
 }

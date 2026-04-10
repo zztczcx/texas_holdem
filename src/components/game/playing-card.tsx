@@ -22,7 +22,7 @@ export interface PlayingCardProps {
 }
 
 const sizeClasses = {
-  sm: 'w-9 h-14 text-xs',
+  sm: 'w-10 h-[3.75rem] text-xs',
   md: 'w-14 h-20 text-sm',
   lg: 'w-20 h-28 text-base',
 };
@@ -47,7 +47,7 @@ export function PlayingCard({ card, size = 'md', className }: PlayingCardProps):
     <article
       aria-label={`${card.rank} of ${card.suit}`}
       className={cn(
-        'relative bg-[var(--color-card-bg)] rounded-lg border border-[#e0d5c8]',
+        'relative bg-[var(--color-card-bg)] rounded-lg border border-[#e0d5c8] overflow-hidden',
         'shadow-[0_2px_8px_rgba(0,0,0,0.3)] select-none',
         'flex flex-col justify-between p-1',
         sizeClasses[size],

@@ -165,7 +165,7 @@ describe('ActionBar', () => {
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDefined();
   });
 
-  it('updates the confirm button after selecting a preset amount', async () => {
+  it('dispatches raise immediately when a preset chip is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
     render(
@@ -178,23 +178,6 @@ describe('ActionBar', () => {
     );
     await user.click(screen.getByRole('button', { name: /^raise$/i }));
     await user.click(screen.getByRole('button', { name: /\$500/i }));
-    expect(screen.getByRole('button', { name: /raise \$500/i })).toBeDefined();
-  });
-
-  it('submits the selected raise amount when the confirm button is clicked', async () => {
-    const user = userEvent.setup();
-    const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
-      <ActionBar
-        player={makePlayer()}
-        gameState={makePreFlopState(20, { p2: 20 })}
-        settings={makeSettings()}
-        onAction={onAction}
-      />,
-    );
-    await user.click(screen.getByRole('button', { name: /^raise$/i }));
-    await user.click(screen.getByRole('button', { name: /\$500/i }));
-    await user.click(screen.getByRole('button', { name: /raise \$500/i }));
     expect(onAction).toHaveBeenCalledWith('raise', 500);
   });
 

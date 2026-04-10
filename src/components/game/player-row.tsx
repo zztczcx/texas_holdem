@@ -17,6 +17,10 @@ export interface PlayerRowProps {
   isActive?: boolean;
   isWinner?: boolean;
   isDimmed?: boolean;
+  isDealer?: boolean;
+  isSmallBlind?: boolean;
+  isBigBlind?: boolean;
+  currentRoundBet?: number;
   actionBadge?: PlayerRowActionBadge | null;
   holeCards?: readonly [Card, Card] | null;
   showHoleCards?: boolean;
@@ -48,6 +52,10 @@ export function PlayerRow({
   isActive = false,
   isWinner = false,
   isDimmed = false,
+  isDealer = false,
+  isSmallBlind = false,
+  isBigBlind = false,
+  currentRoundBet,
   actionBadge,
   holeCards = null,
   showHoleCards = false,
@@ -99,7 +107,7 @@ export function PlayerRow({
         </div>
 
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <p className="truncate text-base font-semibold tracking-[0.01em] text-[var(--color-text-primary)] sm:text-lg">
               {player.name}
             </p>
@@ -108,10 +116,32 @@ export function PlayerRow({
                 You
               </span>
             )}
+            {isDealer && (
+              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-gold)] text-[9px] font-bold text-[var(--color-text-on-light)]">
+                D
+              </span>
+            )}
+            {isSmallBlind && (
+              <span className="rounded-full border border-[var(--color-felt)] bg-[var(--color-felt)]/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-felt)]">
+                SB
+              </span>
+            )}
+            {isBigBlind && (
+              <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-border-muted)]/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-text-muted)]">
+                BB
+              </span>
+            )}
           </div>
-          <p className="mt-0.5 text-sm tabular-nums text-[var(--color-text-primary)] sm:text-base">
-            {formatCurrency(stack)}
-          </p>
+          <div className="mt-0.5 flex items-center gap-2">
+            <p className="text-sm tabular-nums text-[var(--color-text-primary)] sm:text-base">
+              {formatCurrency(stack)}
+            </p>
+            {currentRoundBet != null && currentRoundBet > 0 && (
+              <p className="text-xs tabular-nums text-[var(--color-gold)]">
+                +{formatCurrency(currentRoundBet)}
+              </p>
+            )}
+          </div>
           {actionBadge && (
             <div className="mt-2 sm:hidden">
               <ActionBadge badge={actionBadge} />
