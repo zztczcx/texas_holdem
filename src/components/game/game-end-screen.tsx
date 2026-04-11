@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils/cn';
-import type { Card, Player } from '@/types/game';
+import type { Card, Player, PlayerHand } from '@/types/game';
 import { ChipStack } from '@/components/game/chip-stack';
 import { PlayingCard } from '@/components/game/playing-card';
 import { CardBack } from '@/components/game/card-back';
@@ -28,7 +28,7 @@ export interface GameEndScreenProps {
   tableId: string;
   finalGameState?: {
     communityCards: readonly Card[];
-    playerHands: Record<string, { holeCards: readonly [Card, Card] } | undefined>;
+    playerHands: Record<string, PlayerHand | undefined>;
   } | null;
   className?: string;
 }
@@ -109,6 +109,11 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
                           </>
                       }
                     </div>
+                    {hand?.bestHand && (
+                      <p className="text-xs text-[var(--color-gold)]/80 mt-0.5">
+                        {(t.game.handRanks as Record<string, string>)[hand.bestHand.rankName] ?? hand.bestHand.rankName}
+                      </p>
+                    )}
                     {player.id === winnerPlayerId && (
                       <span className="text-xs font-semibold text-[var(--color-gold)] ml-auto">👑 {t.gameEnd.winner}</span>
                     )}

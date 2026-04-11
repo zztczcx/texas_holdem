@@ -35,6 +35,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
   // Join form state (shown if the viewer is not yet a player)
   const [playerName, setPlayerName] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const { t } = useI18n();
 
@@ -89,6 +90,8 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
   async function handleCopyLink(): Promise<void> {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl).catch(() => null);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   }
 
   return (
@@ -231,8 +234,12 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                 {canonicalUrl}
               </p>
               <div className="flex flex-col gap-2">
-                <Button variant="secondary" size="sm" onClick={handleCopyLink}>
-                  {t.tableLobby.copyLink}
+                <Button
+                  variant={linkCopied ? 'gold' : 'secondary'}
+                  size="sm"
+                  onClick={() => void handleCopyLink()}
+                >
+                  {linkCopied ? t.tableLobby.copyLinkDone : t.tableLobby.copyLink}
                 </Button>
                 {/* WhatsApp share */}
                 <a

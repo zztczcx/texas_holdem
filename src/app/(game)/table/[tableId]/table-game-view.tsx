@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { ToastContainer, useToast } from '@/components/ui/toast';
 import { useGameState } from '@/hooks/use-game-state';
 import { useSounds } from '@/hooks/use-sounds';
+import { useI18n } from '@/components/layout/i18n-provider';
+import type { Dictionary } from '@/i18n/dictionaries';
 import type {
   ActionType,
   FilteredGameState,
@@ -41,6 +43,7 @@ const AVATAR_ANIMALS_TABLE = ['🦊', '🐻', '🐯', '🦁', '🐼', '🐺', '�
  */
 export function TableGameView({ table: initialTable, currentPlayerId }: TableGameViewProps): React.ReactElement {
   const [isPending, startTransition] = useTransition();
+  const { t } = useI18n();
   const [dismissedHandNumber, setDismissedHandNumber] = useState<number | null>(null);
   const [actionHistoryByHand, setActionHistoryByHand] = useState<PlayerActionHistory>({});
   const [cumulativeBetsByHand, setCumulativeBetsByHand] = useState<CumulativeBets>({});
@@ -126,7 +129,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
         playSound('deal');
       }
 
-      const nextBadge = buildPlayerActionBadge(action, previousGameStateRef.current, liveGameState);
+      const nextBadge = buildPlayerActionBadge(action, previousGameStateRef.current, liveGameState, t);
       setActionHistoryByHand((currentHistory) => pruneActionHistory({
         ...currentHistory,
         [liveGameState.handNumber]: {
@@ -156,7 +159,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     }
 
     previousGameStateRef.current = liveGameState;
-  }, [liveGameState, playSound]);
+  }, [liveGameState, playSound, t]);
 
   const currentPlayer = currentPlayerId ? (livePlayers[currentPlayerId] ?? null) : null;
   const activePlayerId = getActivePlayerId(livePlayers, liveGameState);
@@ -186,7 +189,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   const displayHandNumber = activeHandEndResult?.handNumber ?? liveGameState?.handNumber ?? null;
   const displayCommunityCards = activeHandEndResult?.communityCards ?? liveGameState?.communityCards ?? [];
   const displayPot = activeHandEndResult?.pot ?? liveGameState?.pot ?? 0;
-  const displayRoundLabel = activeHandEndResult ? 'Showdown' : formatRoundLabel(liveGameState?.stage);
+  const displayRoundLabel = activeHandEndResult ? t.game.showdown : formatRoundLabel(liveGameState?.stage, t);
   const displayBestHand = getDisplayHandResult(liveGameState, activeHandEndResult, currentPlayerId);
   const displayActionHistory = displayHandNumber ? actionHistoryByHand[displayHandNumber] ?? {} : {};
   const displayCurrentPlayerChips = currentPlayerId
@@ -253,20 +256,20 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     if (result.error) {
       addToast({ message: result.error, variant: 'danger' });
     } else {
-      addToast({ message: 'Bought back in!', variant: 'success' });
+      addToast({ message: t.game.boughtBack, variant: 'success' });
     }
   }
 
   function handleTimerExpire(): void {
     void handleAction('fold');
-    addToast({ message: 'Time out - you were automatically folded.', variant: 'danger' });
+    addToast({ message: t.game.timeout, variant: 'danger' });
   }
 
   if (!liveGameState && !isGameEnded) {
     return (
       <>
         <div className="flex min-h-0 flex-1 items-center justify-center">
-          <p className="text-lg text-[var(--color-text-muted)]">Loading game...</p>
+          <p className="text-lg text-[var(--color-text-muted)]">{t.game.loading}</p>
         </div>
       </>
     );
@@ -297,7 +300,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-                      Pot
+                      {t.game.pot}
                     </p>
                     <p className="text-2xl font-semibold tabular-nums text-[var(--color-text-primary)] sm:text-3xl">
                       {formatCurrency(displayPot)}
@@ -433,9 +436,9 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                         isCurrentPlayerWinner ? (
                           <>
                             <p className="text-3xl select-none" aria-hidden="true">🏆</p>
-                            <h2 className="mt-1 text-xl font-bold text-[var(--color-gold)]">You won!</h2>
+                            <h2 className="mt-1 text-xl font-bold text-[var(--color-gold)]">{t.game.youWon}</h2>
                             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                              You took{' '}
+                              {t.game.youTook}{' '}
                               <span className="font-semibold text-[var(--color-gold)]">
                                 {formatCurrency(currentPlayerWinAmount)}
                               </span>
@@ -445,10 +448,10 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                           <>
                             <p className="text-3xl select-none" aria-hidden="true">🃏</p>
                             <h2 className="mt-1 text-xl font-bold text-[var(--color-text-primary)]">
-                              Better luck next time
+                              {t.game.betterLuck}
                             </h2>
                             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                              {formatWinnersText(activeHandEndResult, playerNames)}
+                              {formatWinnersText(activeHandEndResult, playerNames, t)}
                             </p>
                           </>
                         )
@@ -456,10 +459,10 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                         <>
                           <p className="text-3xl select-none" aria-hidden="true">🃏</p>
                           <h2 className="mt-1 text-xl font-bold text-[var(--color-text-primary)]">
-                            Hand #{activeHandEndResult.handNumber} complete
+                            {t.game.handComplete.replace('{n}', String(activeHandEndResult.handNumber))}
                           </h2>
                           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                            {formatWinnersText(activeHandEndResult, playerNames)}
+                            {formatWinnersText(activeHandEndResult, playerNames, t)}
                           </p>
                         </>
                       )}
@@ -468,7 +471,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                     {/* Card reveal — who showed what (Texas Hold'em showdown rules) */}
                     <div className="px-4 pb-3 sm:px-5">
                       <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--color-text-muted)]">
-                        Showdown
+                        {t.game.showdown}
                       </p>
                       <div className="flex flex-col gap-2">
                         {orderedPlayers.map((player) => {
@@ -499,7 +502,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                                     {player.name}
                                   </p>
                                   {player.id === currentPlayerId && (
-                                    <span className="shrink-0 text-xs text-[var(--color-text-muted)]">(you)</span>
+                                    <span className="shrink-0 text-xs text-[var(--color-text-muted)]">{t.game.you}</span>
                                   )}
                                   {isWinnerRow && winAmount != null && (
                                     <span className="ml-auto shrink-0 text-sm font-bold text-[var(--color-gold)]">
@@ -508,9 +511,9 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                                   )}
                                 </div>
                                 {pHand?.bestHand ? (
-                                  <p className="text-xs text-[var(--color-gold)]/80">{pHand.bestHand.rankName}</p>
+                                  <p className="text-xs text-[var(--color-gold)]/80">{translateHandRank(pHand.bestHand.rankName, t)}</p>
                                 ) : hasFolded ? (
-                                  <p className="text-xs italic text-[var(--color-text-muted)]/60">Folded</p>
+                                  <p className="text-xs italic text-[var(--color-text-muted)]/60">{t.game.folded}</p>
                                 ) : null}
                               </div>
                               <div className="flex shrink-0 gap-1">
@@ -536,11 +539,11 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
                     <div className="sticky bottom-0 flex flex-col gap-2 border-t border-[var(--color-border-muted)] bg-[var(--color-surface)]/98 px-4 py-4 backdrop-blur-sm sm:px-5">
                       {showBuyBack && (
                         <Button variant="gold" size="sm" onClick={() => void handleBuyBack()}>
-                          Buy Back In
+                          {t.game.buyBackIn}
                         </Button>
                       )}
                       <Button variant="primary" size="sm" onClick={() => void handleNextHand()}>
-                        Next Hand
+                        {t.game.nextHand}
                       </Button>
                     </div>
                   </div>
@@ -597,6 +600,7 @@ function buildPlayerActionBadge(
   action: PlayerAction,
   previousState: FilteredGameState | null,
   currentState: FilteredGameState,
+  t: Dictionary,
 ): PlayerRowActionBadge {
   const previousBet = previousState?.bettingRound.bets[action.playerId] ?? 0;
   const currentBet = currentState.bettingRound.bets[action.playerId] ?? 0;
@@ -605,21 +609,21 @@ function buildPlayerActionBadge(
 
   switch (action.type) {
     case 'check':
-      return { label: 'CHECK', tone: 'neutral', key };
+      return { label: t.game.badge.check, tone: 'neutral', key };
     case 'call':
-      return { label: `CALL ${formatCurrency(committed || (action.amount ?? 0))}`, tone: 'call', key };
+      return { label: `${t.game.badge.call} ${formatCurrency(committed || (action.amount ?? 0))}`, tone: 'call', key };
     case 'raise': {
-      const verb = (previousState?.currentBet ?? 0) === 0 ? 'BET' : 'RAISE';
+      const verb = (previousState?.currentBet ?? 0) === 0 ? t.game.badge.bet : t.game.badge.raise;
       const amount = committed || action.amount || currentBet;
       return { label: `${verb} ${formatCurrency(amount)}`, tone: 'raise', key };
     }
     case 'allIn':
-      return { label: 'ALL-IN', tone: 'all-in', key };
+      return { label: t.game.badge.allIn, tone: 'all-in', key };
     case 'fold':
-      return { label: 'FOLD', tone: 'danger', key };
+      return { label: t.game.badge.fold, tone: 'danger', key };
   }
 
-  return { label: 'ACTION', tone: 'neutral', key };
+  return { label: t.game.badge.check, tone: 'neutral', key };
 }
 
 function pruneActionHistory(history: PlayerActionHistory): PlayerActionHistory {
@@ -633,20 +637,14 @@ function pruneActionHistory(history: PlayerActionHistory): PlayerActionHistory {
   );
 }
 
-function formatRoundLabel(stage: FilteredGameState['stage'] | undefined): string {
+function formatRoundLabel(stage: FilteredGameState['stage'] | undefined, t: Dictionary): string {
   switch (stage) {
-    case 'pre-flop':
-      return 'Pre-flop';
-    case 'flop':
-      return 'The Flop';
-    case 'turn':
-      return 'The Turn';
-    case 'river':
-      return 'The River';
-    case 'showdown':
-      return 'Showdown';
-    default:
-      return 'Live Hand';
+    case 'pre-flop': return t.game.roundLabel.preFlop;
+    case 'flop':     return t.game.roundLabel.flop;
+    case 'turn':     return t.game.roundLabel.turn;
+    case 'river':    return t.game.roundLabel.river;
+    case 'showdown': return t.game.roundLabel.showdown;
+    default:         return t.game.roundLabel.live;
   }
 }
 
@@ -678,16 +676,21 @@ function getDisplayHandResult(
   return Object.values(gameState.playerHands).find((hand) => hand?.bestHand)?.bestHand ?? null;
 }
 
-function formatWinnersText(result: HandEndResult, playerNames: Record<string, string>): string {
+function formatWinnersText(result: HandEndResult, playerNames: Record<string, string>, t: Dictionary): string {
   const winners = result.winners.map((winner) => playerNames[winner.playerId] ?? 'Unknown');
-  if (winners.length === 0) {
-    return 'Hand complete';
-  }
+  if (winners.length === 0) return '';
   if (winners.length === 1) {
-    return `${winners[0]} wins ${formatCurrency(result.winners[0]?.amount ?? result.pot)}.`;
+    return t.game.winsText
+      .replace('{name}', winners[0]!)
+      .replace('{amount}', formatCurrency(result.winners[0]?.amount ?? result.pot));
   }
+  return t.game.splitText
+    .replace('{names}', winners.join(' & '))
+    .replace('{amount}', formatCurrency(result.pot));
+}
 
-  return `${winners.join(' and ')} split ${formatCurrency(result.pot)}.`;
+function translateHandRank(rankName: string, t: Dictionary): string {
+  return (t.game.handRanks as Record<string, string>)[rankName] ?? rankName;
 }
 
 function formatCurrency(amount: number): string {

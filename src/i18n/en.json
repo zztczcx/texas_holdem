@@ -1,21 +1,23 @@
 {
   "header": {
     "title": "Hold'em",
-    "nav": { "home": "Home" }
+    "nav": {
+      "home": "Home"
+    }
   },
   "footer": {
     "copyright": "© 2026 CodeBrewServices, Pty Ltd. Based in Melbourne."
   },
   "home": {
     "hero": {
-      "title": "Play Texas Hold\u2019em",
+      "title": "Play Texas Hold’em",
       "subtitle": "with Friends",
-      "body": "Create a private table and share the link. No account required \u2014 just pick a name and start playing."
+      "body": "Create a private table and share the link. No account required — just pick a name and start playing."
     },
     "features": {
       "realtime": {
         "title": "Real-Time",
-        "desc": "Live updates via WebSockets \u2014 see every action instantly."
+        "desc": "Live updates via WebSockets — see every action instantly."
       },
       "private": {
         "title": "Private Tables",
@@ -23,12 +25,12 @@
       },
       "rules": {
         "title": "Full Rules",
-        "desc": "Blinds, side pots, all-in, buy-backs \u2014 complete Hold\u2019em."
+        "desc": "Blinds, side pots, all-in, buy-backs — complete Hold’em."
       }
     }
   },
   "lobby": {
-    "createButton": "\u2660 Create Table",
+    "createButton": "♠ Create Table",
     "tableCode": "Table Code",
     "tableCodePlaceholder": "ABC123",
     "yourName": "Your Name",
@@ -47,14 +49,14 @@
   },
   "tableLobby": {
     "table": "Table",
-    "waitingForPlayers": "Waiting for players\u2026",
+    "waitingForPlayers": "Waiting for players…",
     "startGame": "Start Game",
     "resetGame": "Reset Game",
     "players": "Players",
     "settings": "Settings",
     "inviteFriends": "Invite Friends",
-    "copyLink": "\ud83d\udccb Copy Link",
-    "shareWhatsApp": "\ud83d\udcac Share via WhatsApp",
+    "copyLink": "📋 Copy Link",
+    "shareWhatsApp": "💬 Share via WhatsApp",
     "joinThisTable": "Join this table",
     "enterYourName": "Enter your name",
     "join": "Join",
@@ -66,10 +68,11 @@
     "blinds": "Blinds",
     "maxPlayers": "Max players",
     "buyBack": "Buy-back",
+    "copyLinkDone": "✓ Copied!",
     "gameEnded": "Game over — the host can reset for a new game",
     "waitingShare": "Waiting for players — share the code or link below",
     "needMorePlayers": "Need at least 2 players to start.",
-    "waitingForHost": "Waiting for the host to start the game\u2026",
+    "waitingForHost": "Waiting for the host to start the game…",
     "noPlayersYet": "No players yet",
     "you": "(you)",
     "chips": "chips",
@@ -96,5 +99,50 @@
     "winner": "Winner",
     "home": "Home",
     "playAgain": "Play Again"
+  },
+  "game": {
+    "pot": "Pot",
+    "loading": "Loading game…",
+    "youWon": "You won!",
+    "youTook": "You took",
+    "betterLuck": "Better luck next time",
+    "showdown": "Showdown",
+    "handComplete": "Hand #{n} complete",
+    "folded": "Folded",
+    "buyBackIn": "Buy Back In",
+    "nextHand": "Next Hand",
+    "you": "(you)",
+    "timeout": "Time out — you were automatically folded.",
+    "boughtBack": "Bought back in!",
+    "winsText": "{name} wins {amount}.",
+    "splitText": "{names} split {amount}.",
+    "roundLabel": {
+      "preFlop": "Pre-flop",
+      "flop": "The Flop",
+      "turn": "The Turn",
+      "river": "The River",
+      "showdown": "Showdown",
+      "live": "Live Hand"
+    },
+    "badge": {
+      "check": "CHECK",
+      "call": "CALL",
+      "bet": "BET",
+      "raise": "RAISE",
+      "allIn": "ALL-IN",
+      "fold": "FOLD"
+    },
+    "handRanks": {
+      "Royal Flush": "Royal Flush",
+      "Straight Flush": "Straight Flush",
+      "Four of a Kind": "Four of a Kind",
+      "Full House": "Full House",
+      "Flush": "Flush",
+      "Straight": "Straight",
+      "Three of a Kind": "Three of a Kind",
+      "Two Pair": "Two Pair",
+      "One Pair": "One Pair",
+      "High Card": "High Card"
+    }
   }
 }

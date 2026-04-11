@@ -3,7 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TableGameView } from './table-game-view';
+import { I18nProvider } from '@/components/layout/i18n-provider';
+import enDict from '@/i18n/en.json';
 import type { HandEndResult, Table } from '@/types/game';
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(
+    <I18nProvider locale="en" dict={enDict}>
+      {ui}
+    </I18nProvider>,
+  );
+}
 
 const mockRefresh = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 const mockApplySnapshot = vi.fn();
@@ -172,7 +182,7 @@ describe('TableGameView', () => {
       applyHandEndResult: mockApplyHandEndResult,
     });
 
-    render(<TableGameView table={makeTable()} currentPlayerId="p1" />);
+    renderWithI18n(<TableGameView table={makeTable()} currentPlayerId="p1" />);
 
     await user.click(screen.getByRole('button', { name: /next hand/i }));
 
