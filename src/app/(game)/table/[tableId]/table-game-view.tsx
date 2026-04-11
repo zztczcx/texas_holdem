@@ -11,7 +11,6 @@ import { HandResult } from '@/components/game/hand-result';
 import { PlayerRow, type PlayerRowActionBadge } from '@/components/game/player-row';
 import { PlayingCard } from '@/components/game/playing-card';
 import { TurnTimer } from '@/components/game/turn-timer';
-import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { ToastContainer, useToast } from '@/components/ui/toast';
 import { useGameState } from '@/hooks/use-game-state';
@@ -266,7 +265,6 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   if (!liveGameState && !isGameEnded) {
     return (
       <>
-        <Header />
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <p className="text-lg text-[var(--color-text-muted)]">Loading game...</p>
         </div>
@@ -276,7 +274,6 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
 
   return (
     <>
-      <Header />
       {liveGameState && (
         <main className="h-[calc(100dvh-3.75rem)] bg-[radial-gradient(circle_at_top,var(--color-felt)_0%,var(--color-felt-dark)_42%,var(--color-canvas)_100%)] px-3 py-3 sm:px-4 sm:py-4 md:h-[calc(100dvh-4.25rem)] md:px-6">
           <section className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-[var(--color-border)] bg-[var(--color-surface)]/94 shadow-[0_16px_48px_rgba(0,0,0,0.4)] backdrop-blur-xl">

@@ -3,14 +3,13 @@
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PublicTable, Table } from '@/types/game';
-import { Header } from '@/components/layout/header';
-import { PageContainer } from '@/components/layout/page-container';
+import { useTable } from '@/hooks/use-table';
+import { useI18n } from '@/components/layout/i18n-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { joinTable, startGame, resetGame } from '@/app/actions';
-import { useTable } from '@/hooks/use-table';
-import { useI18n } from '@/components/layout/i18n-provider';
+import { PageContainer } from '@/components/layout/page-container';
 
 interface TableLobbyProps {
   table: Table;
@@ -94,7 +93,6 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
 
   return (
     <>
-      <Header />
       <PageContainer className="py-8 px-4">
         {/* Table header */}
         <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
