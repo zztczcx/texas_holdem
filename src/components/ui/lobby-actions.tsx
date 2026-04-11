@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,20 @@ const DEFAULT_SETTINGS: GameSettings = {
   buyBackAmount: 1000,
 };
 
+const SAVED_NAME_KEY = 'poker_player_name';
+
+function getSavedName(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(SAVED_NAME_KEY) ?? '';
+}
+
+function savePlayerName(name: string): void {
+  if (typeof window === 'undefined') return;
+  if (name.trim()) {
+    localStorage.setItem(SAVED_NAME_KEY, name.trim());
+  }
+}
+
 export function LobbyActions(): React.ReactElement {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -38,11 +52,21 @@ export function LobbyActions(): React.ReactElement {
   const [joinName, setJoinName] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
 
+  // Restore saved name on mount
+  useEffect(() => {
+    const saved = getSavedName();
+    if (saved) {
+      setHostName(saved);
+      setJoinName(saved);
+    }
+  }, []);
+
   function handleCreate(): void {
     if (!hostName.trim()) {
       setCreateError(t.lobby.enterName);
       return;
     }
+    savePlayerName(hostName);
     setCreateError(null);
     startTransition(async () => {
       const result = await createTable(settings, hostName.trim());
@@ -66,6 +90,7 @@ export function LobbyActions(): React.ReactElement {
     setJoinError(null);
     startTransition(async () => {
       const code = joinTableId.trim();
+      savePlayerName(joinName);
       const result = await joinTable(code, joinName.trim());
       if (result.error) {
         if (result.error === 'Table not found.') {
