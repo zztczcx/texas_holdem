@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,23 +43,14 @@ export function LobbyActions(): React.ReactElement {
 
   // Create table modal
   const [createOpen, setCreateOpen] = useState(false);
-  const [hostName, setHostName] = useState('');
+  const [hostName, setHostName] = useState(getSavedName);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Join table
   const [joinTableId, setJoinTableId] = useState('');
-  const [joinName, setJoinName] = useState('');
+  const [joinName, setJoinName] = useState(getSavedName);
   const [joinError, setJoinError] = useState<string | null>(null);
-
-  // Restore saved name on mount
-  useEffect(() => {
-    const saved = getSavedName();
-    if (saved) {
-      setHostName(saved);
-      setJoinName(saved);
-    }
-  }, []);
 
   function handleCreate(): void {
     if (!hostName.trim()) {
