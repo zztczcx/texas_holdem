@@ -311,10 +311,9 @@ export async function performAction(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
 
-  // Rate limit: 60 game actions per minute per player
-  const { success: rlOk } = await getActionRatelimit().limit(playerId);
-  if (!rlOk) return { error: 'Too many requests. Please slow down.' };
-
+  // No rate limit here — the game engine rejects invalid/out-of-turn actions
+  // before any Redis write, and the distributed lock prevents concurrent abuse.
+  // Removing the RL check saves ~2 Redis commands per action (~40 commands/hand).
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };
 

@@ -92,12 +92,14 @@ On warm Vercel functions (the common case), this cuts RL Redis calls dramaticall
 burst traffic from the same player. The singleton `_action` persists across warm
 invocations, so the in-memory cache is reused.
 
-**Option B — Remove `performAction` rate limiter:**
+**Option B — Remove `performAction` rate limiter ✅ DONE:**
 The game engine (`applyAction`) already rejects invalid/out-of-turn actions before any
-Redis write occurs. The action rate limiter only defends against a player hammering valid
-actions (e.g., spam-calling `performAction` 60×/min). If the UI disables the button while
-waiting for the server response (it does, via `isActing` state), this threat is minimal.
-Removing `getActionRatelimit()` from `performAction` saves ~40 commands/hand.
+Redis write occurs. The distributed lock (`acquireLock`) additionally prevents concurrent
+abuse. The UI also disables the action button while waiting for the server response
+(`isActing` state). These three layers make the RL check redundant on `performAction`.
+Removing it saves ~2 Redis commands per action (~40 commands/hand, ~29% overhead reduction).
+`getActionRatelimit()` is still active on `startGame`, `buyBack`, `kickPlayer`, and
+`resetGame` — all low-frequency but higher-impact operations.
 
 **Option C — Upgrade to Pay-as-you-go when sessions exceed ~150/month.**
 At 200K commands/month extra, cost is $0.40. Not worth optimizing code for.
