@@ -2,12 +2,46 @@ import type { NextConfig } from "next";
 
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.pusher.com https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com https://*.adtrafficquality.google;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline'
+    https://js.pusher.com
+    https://va.vercel-scripts.com
+    https://pagead2.googlesyndication.com
+    https://*.googlesyndication.com
+    https://partner.googleadservices.com
+    https://tpc.googlesyndication.com
+    https://www.googletagservices.com
+    https://adservice.google.com
+    https://*.adtrafficquality.google
+    https://www.googleadservices.com
+    https://googleads.g.doubleclick.net
+    https://*.doubleclick.net;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google;
-  font-src 'self';
-  connect-src 'self' wss://*.pusher.com https://*.pusher.com https://*.upstash.io https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://*.doubleclick.net https://adservice.google.com https://*.adtrafficquality.google https://*.googlesyndication.com;
-  frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://*.adtrafficquality.google;
+  img-src 'self' data: blob:
+    https://*.googlesyndication.com
+    https://*.doubleclick.net
+    https://*.google.com
+    https://*.adtrafficquality.google
+    https://*.googleadservices.com
+    https://*.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self'
+    wss://*.pusher.com https://*.pusher.com
+    https://*.upstash.io
+    https://va.vercel-scripts.com
+    https://pagead2.googlesyndication.com
+    https://*.googlesyndication.com
+    https://*.doubleclick.net
+    https://adservice.google.com
+    https://*.adtrafficquality.google
+    https://www.googleadservices.com
+    https://googleads.g.doubleclick.net;
+  frame-src
+    https://googleads.g.doubleclick.net
+    https://tpc.googlesyndication.com
+    https://www.google.com
+    https://*.adtrafficquality.google
+    https://*.doubleclick.net
+    https://*.googlesyndication.com;
   frame-ancestors 'none';
 `.replace(/\s{2,}/g, ' ').trim();
 
