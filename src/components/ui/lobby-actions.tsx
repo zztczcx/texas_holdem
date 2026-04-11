@@ -65,11 +65,11 @@ export function LobbyActions(): React.ReactElement {
     }
     setJoinError(null);
     startTransition(async () => {
-      const result = await joinTable(joinTableId.trim().toUpperCase(), joinName.trim());
+      const result = await joinTable(joinTableId.trim(), joinName.trim());
       if (result.error) {
         setJoinError(result.error);
       } else {
-        router.push(`/table/${joinTableId.trim().toUpperCase()}`);
+        router.push(`/table/${joinTableId.trim()}`);
       }
     });
   }
@@ -96,7 +96,7 @@ export function LobbyActions(): React.ReactElement {
           placeholder={t.lobby.tableCodePlaceholder}
           value={joinTableId}
           onChange={(e) => setJoinTableId(e.target.value)}
-          className="w-full sm:w-40 uppercase"
+          className="w-full sm:w-40"
           maxLength={6}
           aria-label="Table code to join"
         />
