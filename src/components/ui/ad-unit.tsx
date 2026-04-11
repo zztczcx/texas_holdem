@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils/cn';
 
 declare global {
   interface Window {
@@ -38,7 +39,12 @@ export function AdUnit({ className }: AdUnitProps): React.ReactElement {
   }, []);
 
   return (
-    <div className={filled ? className : undefined} style={filled ? undefined : { height: 0, overflow: 'hidden' }}>
+    // Always render full-width so AdSense can measure availableWidth correctly.
+    // Height collapses to 0 when unfilled — no layout space consumed.
+    <div
+      className={cn('w-full', filled && className)}
+      style={filled ? undefined : { height: 0, overflow: 'hidden' }}
+    >
       <ins
         ref={insRef}
         className="adsbygoogle"
