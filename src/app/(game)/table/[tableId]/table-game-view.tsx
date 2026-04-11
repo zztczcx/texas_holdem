@@ -15,6 +15,7 @@ import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { ToastContainer, useToast } from '@/components/ui/toast';
 import { useGameState } from '@/hooks/use-game-state';
+import { useSounds } from '@/hooks/use-sounds';
 import type {
   ActionType,
   FilteredGameState,
@@ -47,6 +48,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   const { toasts, addToast, dismissToast } = useToast();
   const previousGameStateRef = useRef<FilteredGameState | null>(null);
   const processedActionKeyRef = useRef<string | null>(null);
+  const { play: playSound } = useSounds();
 
   const initialGameState = initialTable.gameState
     ? { ...initialTable.gameState, deck: null as null }
@@ -78,6 +80,17 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
   const isShowingHandResult = Boolean(activeHandEndResult);
   const knownPlayers = { ...initialTable.players, ...livePlayers };
 
+  // Play win/lose sound when hand result arrives
+  const prevHandEndResultRef = useRef<HandEndResult | null>(null);
+  useEffect(() => {
+    if (!handEndResult || handEndResult === prevHandEndResultRef.current) return;
+    prevHandEndResultRef.current = handEndResult;
+    const isWinner = currentPlayerId
+      ? handEndResult.winners.some((w) => w.playerId === currentPlayerId)
+      : false;
+    if (isWinner) playSound('win');
+  }, [handEndResult, currentPlayerId, playSound]);
+
   useEffect(() => {
     if (!liveGameState) {
       previousGameStateRef.current = null;
@@ -98,6 +111,22 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     ].join(':');
 
     if (processedActionKeyRef.current !== actionKey) {
+      // Play a sound for every action we observe from any player
+      switch (action.type) {
+        case 'fold':   playSound('fold');   break;
+        case 'check':  playSound('check');  break;
+        case 'call':   playSound('chip');   break;
+        case 'raise':  playSound('raise');  break;
+        case 'allIn':  playSound('allIn');  break;
+      }
+
+      // Play deal sound when community cards first appear
+      const prevCards = previousGameStateRef.current?.communityCards?.length ?? 0;
+      const nextCards = liveGameState.communityCards?.length ?? 0;
+      if (nextCards > prevCards) {
+        playSound('deal');
+      }
+
       const nextBadge = buildPlayerActionBadge(action, previousGameStateRef.current, liveGameState);
       setActionHistoryByHand((currentHistory) => pruneActionHistory({
         ...currentHistory,
@@ -128,7 +157,7 @@ export function TableGameView({ table: initialTable, currentPlayerId }: TableGam
     }
 
     previousGameStateRef.current = liveGameState;
-  }, [liveGameState]);
+  }, [liveGameState, playSound]);
 
   const currentPlayer = currentPlayerId ? (livePlayers[currentPlayerId] ?? null) : null;
   const activePlayerId = getActivePlayerId(livePlayers, liveGameState);

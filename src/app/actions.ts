@@ -325,11 +325,19 @@ export async function performAction(
         newPlayers[player.id] = { ...player, chips: 0, status: 'allIn' };
         break;
       case 'call':
-      case 'raise':
+      case 'raise': {
         if (betPaid > 0) {
-          newPlayers[player.id] = { ...player, chips: Math.max(0, player.chips - betPaid) };
+          const remaining = Math.max(0, player.chips - betPaid);
+          // If calling/raising goes all-in (0 chips left), mark status as allIn so
+          // the game correctly skips them in subsequent streets.
+          newPlayers[player.id] = {
+            ...player,
+            chips: remaining,
+            status: remaining === 0 ? 'allIn' : player.status,
+          };
         }
         break;
+      }
     }
 
     // ── Derive active player sets ───────────────────────────────────────────
@@ -349,9 +357,11 @@ export async function performAction(
       return seats.find((s) => s > fromSeat) ?? seats[0]!;
     }
 
-    // First to act post-flop: leftmost active player after dealer
+    // First to act post-flop: first player who can still bet (not allIn)
+    // Falls back to activePlayers when everyone is allIn (run-out scenario).
     function firstToActPostFlop(): number {
-      return nextSeatIn(newGameState.dealerSeatIndex, activePlayers);
+      const pool = canActPlayers.length > 0 ? canActPlayers : activePlayers;
+      return nextSeatIn(newGameState.dealerSeatIndex, pool);
     }
 
     // ── Determine round / stage outcome ─────────────────────────────────────
@@ -383,8 +393,9 @@ export async function performAction(
         newGameState = { ...newGameState, currentSeatIndex: firstToActPostFlop() };
       }
 
-      // Auto-deal remaining streets when nobody can act (all-in run-out)
-      while (nextStage !== 'showdown' && canActPlayers.length === 0) {
+      // Auto-deal remaining streets when 0 or 1 players can act —
+      // a single remaining player can't bet against anyone.
+      while (nextStage !== 'showdown' && canActPlayers.length <= 1) {
         const autoNext = NEXT_STAGE[newGameState.stage] ?? 'showdown';
         newGameState = advanceStage(newGameState, autoNext as typeof newGameState.stage);
         nextStage = autoNext;

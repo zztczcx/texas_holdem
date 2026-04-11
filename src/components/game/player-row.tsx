@@ -85,7 +85,7 @@ export function PlayerRow({
         'relative rounded-[28px] border px-3 py-3 transition-all sm:px-4',
         'bg-[var(--color-surface)] border-[var(--color-border-muted)] shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         isActive && 'border-[var(--color-focus)]/40 shadow-[0_0_0_1px_rgba(67,97,238,0.24)]',
-        isWinner && 'border-[var(--color-gold)]/30 bg-[var(--color-felt-dark)]/80 shadow-[0_0_0_1px_rgba(212,175,55,0.18)]',
+        isWinner && 'border-[var(--color-gold)]/30 bg-[var(--color-felt-dark)]/80 shadow-[0_0_0_1px_rgba(212,175,55,0.18)] animate-win-shimmer',
         isDimmed && 'opacity-[0.45]',
         className,
       )}

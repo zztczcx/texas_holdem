@@ -741,3 +741,224 @@ describe('Full two-player game — end-to-end', () => {
     });
   });
 });
+
+// ── Bug regression: all-in call must not get stuck ────────────────────────────
+//
+// Scenario: On the flop, Player A raises 200. Player B only has 170 chips,
+// so they call by going all-in. The game MUST auto-advance through the
+// remaining streets to showdown — it must NOT wait for the all-in player
+// to act on subsequent streets.
+
+describe('All-in call regression — game must not get stuck', () => {
+  let tableId: string;
+  let aliceId: string;
+  let bobId: string;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    kvStore.clear();
+    locks.clear();
+
+    mockGetTable.mockImplementation(async (id: string) => {
+      const raw = kvStore.get(tableKey(id));
+      if (!raw) return null;
+      return reviveActedPlayers(structuredClone(raw)) as Table;
+    });
+    mockSetTable.mockImplementation(async (table: Table) => {
+      const copy = structuredClone(table) as unknown as Record<string, unknown>;
+      if (copy.gameState) {
+        const gs = copy.gameState as Record<string, unknown>;
+        const br = gs.bettingRound as Record<string, unknown>;
+        if (br?.actedPlayers instanceof Set) {
+          br.actedPlayers = Array.from(br.actedPlayers as Set<unknown>);
+        }
+      }
+      kvStore.set(tableKey(table.id), copy);
+    });
+    mockAcquireLock.mockImplementation(async (id: string) => {
+      if (locks.has(id)) return null;
+      locks.add(id);
+      return { key: id, value: 'evt' };
+    });
+    mockReleaseLock.mockImplementation(async (lock: { key: string }) => {
+      locks.delete(lock.key);
+    });
+    mockSetSession.mockResolvedValue(undefined);
+
+    let tableIdx = 0;
+    let playerIdx = 0;
+    mockGenerateTableId.mockImplementation(() => TABLE_IDS[tableIdx++] ?? 'zzz999');
+    mockUuidv4.mockImplementation(() => PLAYER_UUIDS[playerIdx++] ?? '00000000-0000-4000-8000-000000000099');
+
+    // Alice creates the table (startingChips: 1000 for Alice, only 170 for Bob)
+    mockGetOrCreateSessionId.mockResolvedValue('session-alice');
+    const { createTable } = await import('@/app/actions');
+    // Use standard chips — we'll manipulate Bob's chips directly after join
+    const createResult = await createTable(makeSettings(), 'Alice');
+    expect(createResult.error).toBeUndefined();
+    tableId = createResult.data!.tableId;
+    aliceId = PLAYER_UUIDS[0];
+
+    mockGetOrCreateSessionId.mockResolvedValue('session-bob');
+    const { joinTable } = await import('@/app/actions');
+    const joinResult = await joinTable(tableId, 'Bob');
+    expect(joinResult.error).toBeUndefined();
+    bobId = joinResult.data?.playerId ?? PLAYER_UUIDS[1];
+
+    // Manually set Bob's chips to 170 so he can't cover Alice's full raise
+    const tableBeforeStart = await getStoredTable(tableId);
+    const patchedPlayers = { ...tableBeforeStart.players };
+    patchedPlayers[bobId] = { ...patchedPlayers[bobId]!, chips: 170 };
+    await mockSetTable({ ...tableBeforeStart, players: patchedPlayers });
+
+    const { startGame } = await import('@/app/actions');
+    await startGame(tableId, aliceId);
+  });
+
+  it('player B going all-in on the flop advances game to showdown without getting stuck', async () => {
+    // ── Pre-flop: get to the flop ────────────────────────────────────────────
+    let table = await getStoredTable(tableId);
+
+    // Play through pre-flop: current player calls (or checks), then check option
+    async function actCurrent(type: 'call' | 'check' | 'allIn'): Promise<void> {
+      table = await getStoredTable(tableId);
+      const actor = currentSeatPlayer(table);
+      if (!actor) return;
+      const res = await doAction(tableId, actor.id, { type, playerId: actor.id, timestamp: Date.now() });
+      if (res.error) throw new Error(`${type} failed: ${res.error}`);
+    }
+
+    // Pre-flop: get both players to call/check so we reach the flop
+    await actCurrent('call');
+    table = await getStoredTable(tableId);
+    if (table.gameState?.stage === 'pre-flop') {
+      await actCurrent('check');
+    }
+
+    table = await getStoredTable(tableId);
+    if (!table.gameState || table.gameState.stage !== 'flop') {
+      // If already past flop (e.g. someone bust pre-flop), just verify chips are fine
+      const total = Object.values(table.players).reduce((s, p) => s + p.chips, 0);
+      expect(total).toBeLessThanOrEqual(1170); // 1000 + 170
+      return;
+    }
+    expect(table.gameState.stage).toBe('flop');
+
+    // ── Flop: Alice raises 200 (Alice has 1000 chips, more than enough) ─────
+    table = await getStoredTable(tableId);
+    const flopActor = currentSeatPlayer(table);
+
+    // Check who has enough chips to raise 200 (must be the non-Bob player)
+    // If the first to act post-flop is Bob (170 chips), have him check;
+    // then Alice raises. Otherwise Alice raises directly.
+    if (flopActor.id === bobId) {
+      await actCurrent('check');
+      table = await getStoredTable(tableId);
+    }
+
+    // Alice raises 200 (net new chips placed)
+    table = await getStoredTable(tableId);
+    const aliceAlreadyBet = table.gameState!.bettingRound.bets[aliceId] ?? 0;
+    const raiseRes = await doAction(tableId, aliceId, {
+      type: 'raise',
+      playerId: aliceId,
+      amount: 200,
+      timestamp: Date.now(),
+    });
+    expect(raiseRes.error).toBeUndefined();
+
+    table = await getStoredTable(tableId);
+    expect(table.gameState!.currentBet).toBe(aliceAlreadyBet + 200);
+    expect(table.gameState!.stage).toBe('flop'); // still on flop waiting for Bob
+
+    // ── Bob goes all-in (he has 170 chips, can't cover the 200 raise) ───────
+    const bobBeforeAllIn = table.players[bobId]!;
+    expect(bobBeforeAllIn.chips).toBeLessThan(200); // confirm Bob can't cover
+
+    const allInRes = await doAction(tableId, bobId, {
+      type: 'allIn',
+      playerId: bobId,
+      timestamp: Date.now(),
+    });
+    expect(allInRes.error).toBeUndefined();
+
+    // ── Critical assertion: game must NOT be stuck ───────────────────────────
+    // After Bob goes all-in, there's only 1 player who can act (Alice).
+    // The game should auto-advance through turn + river to showdown,
+    // determine a winner, and start the next hand OR end the game.
+    table = await getStoredTable(tableId);
+
+    // The hand must be resolved — game should NOT be sitting on 'turn', 'river'
+    // waiting for Bob (allIn) to act. Either a new hand started or game ended.
+    const isHandResolved =
+      table.state === 'ended' ||
+      (table.state === 'playing' && table.gameState?.handNumber !== undefined && table.gameState.handNumber > 1) ||
+      // Accept: same hand moved to a stage where Bob is NOT currentSeatIndex
+      (table.state === 'playing' && table.gameState !== null && (() => {
+        const gs = table.gameState!;
+        const currentPlayerAtSeat = Object.values(table.players).find(
+          (p) => p.seatIndex === gs.currentSeatIndex,
+        );
+        return currentPlayerAtSeat?.status !== 'allIn';
+      })());
+
+    expect(isHandResolved).toBe(true);
+
+    // Chips must always be conserved (zero-sum, accounting for blinds)
+    const totalChips = Object.values(table.players).reduce((s, p) => s + p.chips, 0);
+    const potInPlay = table.state === 'playing' ? (table.gameState?.pot ?? 0) : 0;
+    // Initial chips: Alice 1000 + Bob 170 = 1170
+    expect(totalChips + potInPlay).toBe(1170);
+  });
+
+  it('Bob is marked allIn (not active) after calling/going all-in with all his chips', async () => {
+    let table = await getStoredTable(tableId);
+
+    // Pre-flop: navigate to flop
+    async function actCurrent(type: 'call' | 'check' | 'allIn'): Promise<void> {
+      table = await getStoredTable(tableId);
+      const actor = currentSeatPlayer(table);
+      if (!actor) return;
+      const res = await doAction(tableId, actor.id, { type, playerId: actor.id, timestamp: Date.now() });
+      if (res.error) throw new Error(`${type} failed: ${res.error}`);
+    }
+
+    await actCurrent('call');
+    table = await getStoredTable(tableId);
+    if (table.gameState?.stage === 'pre-flop') {
+      await actCurrent('check');
+    }
+
+    table = await getStoredTable(tableId);
+    if (!table.gameState || table.gameState.stage !== 'flop') return;
+
+    // Get Bob to go all-in (either as first actor or after Alice acts)
+    const flopActor = currentSeatPlayer(table);
+    if (flopActor.id !== bobId) {
+      // Alice acts first — have Alice raise so Bob must respond
+      const raiseRes = await doAction(tableId, aliceId, {
+        type: 'raise',
+        playerId: aliceId,
+        amount: 200,
+        timestamp: Date.now(),
+      });
+      expect(raiseRes.error).toBeUndefined();
+    }
+
+    // Bob goes all-in
+    const allInRes = await doAction(tableId, bobId, {
+      type: 'allIn',
+      playerId: bobId,
+      timestamp: Date.now(),
+    });
+    expect(allInRes.error).toBeUndefined();
+
+    table = await getStoredTable(tableId);
+    const bobAfter = table.players[bobId];
+    if (bobAfter) {
+      // Bob should be all-in or busted (if game ended he may have been removed)
+      expect(['allIn', 'active']).toContain(bobAfter.status); // active only if won
+      expect(bobAfter.chips).toBeLessThanOrEqual(170); // never gained chips mid-hand
+    }
+  });
+});

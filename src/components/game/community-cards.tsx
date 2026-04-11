@@ -27,7 +27,16 @@ export function CommunityCards({ cards, className }: CommunityCardsProps): React
       {Array.from({ length: TOTAL_SLOTS }).map((_, i) => {
         const card = cards[i];
         if (card) {
-          return <PlayingCard key={i} card={card} size="md" />;
+          // key includes card identity so the div mounts fresh when card is first revealed
+          return (
+            <div
+              key={`${card.suit}-${card.rank}`}
+              className="animate-card-deal"
+              style={{ animationDelay: `${i * 55}ms` }}
+            >
+              <PlayingCard card={card} size="md" />
+            </div>
+          );
         }
         return <CardBack key={i} size="md" className="opacity-95" />;
       })}
