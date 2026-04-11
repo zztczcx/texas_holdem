@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTable } from '@/lib/db/kv';
 import { getSessionId } from '@/lib/utils/session';
 import { buildPublicTable } from '@/lib/game/state-filter';
+import { getApiRatelimit } from '@/lib/utils/ratelimit';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ tableId: string }> },
 ): Promise<NextResponse> {
+  // Rate limit: 120 polls per minute per IP
+  const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
+  const { success: rlOk } = await getApiRatelimit().limit(ip);
+  if (!rlOk) {
+    return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
+  }
+
   const { tableId } = await params;
 
   if (!tableId || tableId.length !== 6) {

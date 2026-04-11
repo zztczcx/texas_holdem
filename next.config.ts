@@ -2,11 +2,11 @@ import type { NextConfig } from "next";
 
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.pusher.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.pusher.com https://va.vercel-scripts.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: blob:;
   font-src 'self';
-  connect-src 'self' wss://*.pusher.com https://*.pusher.com https://*.upstash.io;
+  connect-src 'self' wss://*.pusher.com https://*.pusher.com https://*.upstash.io https://va.vercel-scripts.com;
   frame-ancestors 'none';
 `.replace(/\s{2,}/g, ' ').trim();
 

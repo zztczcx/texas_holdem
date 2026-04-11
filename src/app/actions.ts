@@ -17,8 +17,19 @@ import {
   releaseLock,
   setSession,
 } from '../lib/db/kv';
+import { headers } from 'next/headers';
 import { getOrCreateSessionId } from '../lib/utils/session';
 import { generateTableId } from '../lib/utils/nanoid';
+import { getCreateJoinRatelimit, getActionRatelimit } from '../lib/utils/ratelimit';
+
+/** Safely read request IP — returns 'unknown' outside a request context (e.g. tests). */
+async function getRequestIp(): Promise<string> {
+  try {
+    return (await headers()).get('x-forwarded-for') ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
 import { createGameState, determineWinners, computeHandEnd, applyAction, advanceStage } from '../lib/game/game-state';
 import { assertIsHost, assertPlayerInTable, buildGameSyncSnapshot, buildPublicTable } from '../lib/game/state-filter';
 import {
@@ -99,6 +110,11 @@ export async function createTable(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
 
+  // Rate limit: 10 table creations per minute per IP
+  const ip = await getRequestIp();
+  const { success: rlOk } = await getCreateJoinRatelimit().limit(ip);
+  if (!rlOk) return { error: 'Too many requests. Please slow down.' };
+
   try {
     const sessionId = await getOrCreateSessionId();
     const tableId = generateTableId();
@@ -146,6 +162,11 @@ export async function joinTable(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
+
+  // Rate limit: 10 joins per minute per IP
+  const ip = await getRequestIp();
+  const { success: rlOk } = await getCreateJoinRatelimit().limit(ip);
+  if (!rlOk) return { error: 'Too many requests. Please slow down.' };
 
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) {
@@ -210,6 +231,10 @@ export async function startGame(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
+
+  // Rate limit: 60 game actions per minute per player
+  const { success: rlOk } = await getActionRatelimit().limit(playerId);
+  if (!rlOk) return { error: 'Too many requests. Please slow down.' };
 
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };
@@ -285,6 +310,10 @@ export async function performAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
+
+  // Rate limit: 60 game actions per minute per player
+  const { success: rlOk } = await getActionRatelimit().limit(playerId);
+  if (!rlOk) return { error: 'Too many requests. Please slow down.' };
 
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };
@@ -536,6 +565,10 @@ export async function buyBack(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
 
+  // Rate limit: 60 game actions per minute per player
+  const { success: rlBuyBack } = await getActionRatelimit().limit(playerId);
+  if (!rlBuyBack) return { error: 'Too many requests. Please slow down.' };
+
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };
 
@@ -583,6 +616,10 @@ export async function kickPlayer(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
+
+  // Rate limit: 60 game actions per minute per player (host)
+  const { success: rlKick } = await getActionRatelimit().limit(hostId);
+  if (!rlKick) return { error: 'Too many requests. Please slow down.' };
 
   const lock = await acquireLock(tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };
@@ -707,6 +744,10 @@ export async function resetGame(tableId: string, hostPlayerId: string): Promise<
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
+
+  // Rate limit: 60 game actions per minute per player (host)
+  const { success: rlReset } = await getActionRatelimit().limit(hostPlayerId);
+  if (!rlReset) return { error: 'Too many requests. Please slow down.' };
 
   const lock = await acquireLock(parsed.data.tableId).catch(() => null);
   if (!lock) return { error: 'Table is busy — please try again shortly.' };

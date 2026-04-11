@@ -39,7 +39,9 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
   const isHost = playerId === liveTable.hostPlayerId;
   const isPlayer = playerId !== null;
   const players = Object.values(liveTable.players);
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  // Always use the canonical domain — don't rely on window.location which may differ in previews
+  const canonicalUrl = `https://airtexas.club/table/${liveTable.id}`;
+  const shareUrl = typeof window !== 'undefined' ? canonicalUrl : canonicalUrl;
 
   function handleJoin(): void {
     if (!playerName.trim()) {
@@ -217,14 +219,31 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                 id="share-heading"
                 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
               >
-                Share
+                Invite Friends
               </h2>
-              <p className="text-2xl font-bold font-mono tracking-widest text-[var(--color-gold)] mb-3">
+              {/* Table code */}
+              <p className="text-2xl font-bold font-mono tracking-widest text-[var(--color-gold)] mb-2">
                 {liveTable.id}
               </p>
-              <Button variant="secondary" size="sm" onClick={handleCopyLink}>
-                Copy Link
-              </Button>
+              {/* Full URL (truncated for display) */}
+              <p className="text-xs text-[var(--color-text-muted)] font-mono break-all mb-3 select-all">
+                {canonicalUrl}
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button variant="secondary" size="sm" onClick={handleCopyLink}>
+                  📋 Copy Link
+                </Button>
+                {/* WhatsApp share */}
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Join my Texas Hold'em table! ${canonicalUrl}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-border-muted)] bg-[#25d366]/10 px-3 py-2 text-sm font-medium text-[#25d366] hover:bg-[#25d366]/20 transition-colors"
+                  aria-label="Share via WhatsApp"
+                >
+                  <span aria-hidden="true">💬</span> Share via WhatsApp
+                </a>
+              </div>
             </section>
 
             {/* Join form (for viewers who haven't joined yet) */}

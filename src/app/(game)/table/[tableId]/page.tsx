@@ -13,9 +13,43 @@ interface TablePageProps {
 
 export async function generateMetadata({ params }: TablePageProps): Promise<Metadata> {
   const { tableId } = await params;
+
+  // Best-effort fetch — fall back to generic meta if KV unavailable
+  let hostName: string | null = null;
+  try {
+    const table = await getTable(tableId).catch(() => null);
+    if (table) {
+      hostName = table.players[table.hostPlayerId]?.name ?? null;
+    }
+  } catch {
+    // ignore
+  }
+
+  const title = hostName
+    ? `${hostName}'s Poker Table — Join Now 🃏`
+    : `Table ${tableId} — Texas Hold'em`;
+
+  const description = hostName
+    ? `${hostName} invited you to play Texas Hold'em. Table ${tableId.toUpperCase()} — no account needed.`
+    : `Join the Texas Hold'em table ${tableId.toUpperCase()}. No account required.`;
+
   return {
-    title: `Table ${tableId}`,
-    description: `Join the Texas Hold'em table ${tableId}.`,
+    title,
+    description,
+    // Private tables must not appear in search results
+    robots: { index: false, follow: false },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `https://airtexas.club/table/${tableId}`,
+      siteName: "Texas Hold'em — airtexas.club",
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 

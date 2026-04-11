@@ -43,6 +43,19 @@ vi.mock('@/lib/pusher/server', () => ({
   publishTableUpdated: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Allow all requests through in tests
+vi.mock('@/lib/utils/ratelimit', () => ({
+  getCreateJoinRatelimit: () => ({ limit: vi.fn().mockResolvedValue({ success: true }) }),
+  getActionRatelimit: () => ({ limit: vi.fn().mockResolvedValue({ success: true }) }),
+  getApiRatelimit: () => ({ limit: vi.fn().mockResolvedValue({ success: true }) }),
+  getRatelimit: () => ({ limit: vi.fn().mockResolvedValue({ success: true }) }),
+  checkRateLimit: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn().mockReturnValue({ get: vi.fn().mockReturnValue(null) }),
+}));
+
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
 function makeSettings(overrides: Partial<GameSettings> = {}): GameSettings {
