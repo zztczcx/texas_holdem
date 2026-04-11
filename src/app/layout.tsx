@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/react';
 import { I18nProvider } from '@/components/layout/i18n-provider';
 import { getLocale, getDictionary } from '@/i18n/dictionaries';
@@ -54,17 +53,19 @@ export default async function RootLayout({
   const dict = await getDictionary(locale);
   return (
     <html lang={locale} className="min-h-dvh">
+      <head>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2430817783068325"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="min-h-dvh flex flex-col antialiased overflow-x-hidden">
         <I18nProvider locale={locale} dict={dict}>
           {children}
         </I18nProvider>
         <Analytics />
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2430817783068325"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );
