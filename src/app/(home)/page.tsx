@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { LobbyActions } from '@/components/ui/lobby-actions';
 import { getLocale, getDictionary } from '@/i18n/dictionaries';
@@ -15,9 +16,9 @@ export default async function HomePage(): Promise<React.ReactElement> {
   const f = t.home.features;
 
   const features = [
-    { icon: '⚡', title: f.realtime.title, desc: f.realtime.desc },
-    { icon: '🔒', title: f.private.title, desc: f.private.desc },
-    { icon: '🃏', title: f.rules.title, desc: f.rules.desc },
+    { icon: '⚡', title: f.realtime.title, desc: f.realtime.desc, href: undefined as string | undefined },
+    { icon: '🔒', title: f.private.title, desc: f.private.desc, href: undefined as string | undefined },
+    { icon: '🃏', title: f.rules.title, desc: f.rules.desc, href: '/rules' as string | undefined },
   ];
 
   return (
@@ -54,14 +55,22 @@ export default async function HomePage(): Promise<React.ReactElement> {
         className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl text-center"
       >
         <h2 id="features-heading" className="sr-only">Features</h2>
-        {features.map(({ icon, title, desc }) => (
+        {features.map(({ icon, title, desc, href }) => (
           <article
             key={title}
-            className="rounded-2xl p-5 bg-[var(--color-surface)] border border-[var(--color-border-muted)]"
+            className="rounded-2xl p-5 bg-[var(--color-surface)] border border-[var(--color-border-muted)] group"
           >
             <div aria-hidden="true" className="text-3xl mb-2">{icon}</div>
             <h3 className="font-semibold text-[var(--color-text-primary)] mb-1">{title}</h3>
             <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{desc}</p>
+            {href && (
+              <Link
+                href={href}
+                className="mt-3 inline-flex items-center text-xs font-medium text-[var(--color-gold)] hover:underline"
+              >
+                {f.rules.link}
+              </Link>
+            )}
           </article>
         ))}
       </section>

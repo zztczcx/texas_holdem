@@ -2,7 +2,8 @@
   "header": {
     "title": "Hold'em",
     "nav": {
-      "home": "Home"
+      "home": "Home",
+      "rules": "Rules"
     }
   },
   "footer": {
@@ -25,7 +26,8 @@
       },
       "rules": {
         "title": "Full Rules",
-        "desc": "Blinds, side pots, all-in, buy-backs — complete Hold’em."
+        "desc": "Blinds, side pots, all-in, buy-backs — complete Hold’em.",
+        "link": "Learn the rules →"
       }
     }
   },

@@ -33,6 +33,12 @@ export async function Header({ className }: { className?: string }): Promise<Rea
         >
           {t.header.nav.home}
         </Link>
+        <Link
+          href="/rules"
+          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        >
+          {t.header.nav.rules}
+        </Link>
         <LangSwitcher />
       </nav>
     </header>
