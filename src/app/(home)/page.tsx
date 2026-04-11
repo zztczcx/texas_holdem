@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { LobbyActions } from '@/components/ui/lobby-actions';
+import { AdUnit } from '@/components/ui/ad-unit';
 import { getLocale, getDictionary } from '@/i18n/dictionaries';
 
 export const metadata: Metadata = {
@@ -48,6 +49,9 @@ export default async function HomePage(): Promise<React.ReactElement> {
         </h2>
         <LobbyActions />
       </section>
+
+      {/* Ad unit */}
+      <AdUnit className="w-full max-w-3xl mt-10" />
 
       {/* Feature highlights */}
       <section

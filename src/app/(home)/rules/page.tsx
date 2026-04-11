@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
+import { AdUnit } from '@/components/ui/ad-unit';
 import { getLocale } from '@/i18n/dictionaries';
 
 export const metadata: Metadata = {
@@ -306,6 +307,9 @@ export default async function RulesPage(): Promise<React.ReactElement> {
         </h1>
         <p className="mt-2 text-[var(--color-text-muted)] text-lg">{c.subtitle}</p>
       </header>
+
+      {/* Ad unit */}
+      <AdUnit className="w-full max-w-3xl mb-4" />
 
       <div className="flex flex-col gap-10 max-w-3xl">
 
