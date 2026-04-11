@@ -1,23 +1,24 @@
 'use client';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function ExpiredTableBanner(): React.ReactElement | null {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [visible, setVisible] = useState(false);
+  // Capture on first render — stays true even after URL is cleaned
+  const [show, setShow] = useState(() => searchParams.get('expired') === '1');
+  const cleaned = useRef(false);
 
   useEffect(() => {
-    if (searchParams.get('expired') === '1') {
-      setVisible(true);
-      // Clean the query param from the URL without a page reload
+    if (show && !cleaned.current) {
+      cleaned.current = true;
       router.replace(pathname, { scroll: false });
     }
-  }, [searchParams, router, pathname]);
+  }, [show, router, pathname]);
 
-  if (!visible) return null;
+  if (!show) return null;
 
   return (
     <div
@@ -28,7 +29,7 @@ export function ExpiredTableBanner(): React.ReactElement | null {
         That table has expired or no longer exists.
       </p>
       <button
-        onClick={() => setVisible(false)}
+        onClick={() => setShow(false)}
         aria-label="Dismiss"
         className="text-[var(--color-danger)]/60 hover:text-[var(--color-danger)] transition-colors text-lg leading-none"
       >
