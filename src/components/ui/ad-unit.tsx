@@ -17,15 +17,14 @@ export function AdUnit({ className }: AdUnitProps): React.ReactElement | null {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    const ins = insRef.current;
+    if (!ins) return;
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch {
-      setHidden(true);
-      return;
+      // ad blocker or script not loaded — observer will never fire; leave visible
     }
-
-    const ins = insRef.current;
-    if (!ins) return;
 
     // AdSense sets data-ad-status="filled" or "unfilled" after the auction
     const observer = new MutationObserver(() => {
