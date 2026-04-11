@@ -95,8 +95,8 @@ export function LobbyActions(): React.ReactElement {
           label={t.lobby.tableCode}
           placeholder={t.lobby.tableCodePlaceholder}
           value={joinTableId}
-          onChange={(e) => setJoinTableId(e.target.value.toUpperCase())}
-          className="w-full sm:w-40"
+          onChange={(e) => setJoinTableId(e.target.value)}
+          className="w-full sm:w-40 uppercase"
           maxLength={6}
           aria-label="Table code to join"
         />
