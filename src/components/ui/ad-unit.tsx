@@ -38,7 +38,7 @@ export function AdUnit({ className }: AdUnitProps): React.ReactElement {
   }, []);
 
   return (
-    <div className={filled ? className : undefined} style={filled ? undefined : { display: 'none' }}>
+    <div className={filled ? className : undefined} style={filled ? undefined : { height: 0, overflow: 'hidden' }}>
       <ins
         ref={insRef}
         className="adsbygoogle"
