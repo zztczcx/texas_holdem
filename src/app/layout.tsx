@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/react';
 import { I18nProvider } from '@/components/layout/i18n-provider';
 import { getLocale, getDictionary } from '@/i18n/dictionaries';
@@ -58,6 +59,12 @@ export default async function RootLayout({
           {children}
         </I18nProvider>
         <Analytics />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2430817783068325"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
