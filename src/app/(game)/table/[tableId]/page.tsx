@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import type { Table } from '@/types/game';
 import { getTable } from '@/lib/db/kv';
 import { getSessionId } from '@/lib/utils/session';
@@ -57,7 +57,7 @@ export default async function TablePage({ params }: TablePageProps): Promise<Rea
   const { tableId } = await params;
   const table = await getTable(tableId).catch(() => null);
 
-  if (!table) notFound();
+  if (!table) redirect('/?expired=1');
 
   const sessionId = await getSessionId();
   const currentPlayerId =

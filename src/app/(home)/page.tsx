@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { PageContainer } from '@/components/layout/page-container';
 import { LobbyActions } from '@/components/ui/lobby-actions';
 import { AdUnit } from '@/components/ui/ad-unit';
+import { ExpiredTableBanner } from '@/components/ui/expired-table-banner';
 import { getLocale, getDictionary } from '@/i18n/dictionaries';
 
 export const metadata: Metadata = {
@@ -24,6 +26,11 @@ export default async function HomePage(): Promise<React.ReactElement> {
 
   return (
     <PageContainer className="flex flex-col items-center justify-center px-4 py-16 md:py-24">
+      {/* Expired table notice — shown when redirected from a missing table */}
+      <Suspense>
+        <ExpiredTableBanner />
+      </Suspense>
+
       {/* Hero */}
       <section aria-labelledby="hero-heading" className="text-center max-w-2xl mb-12">
         <div aria-hidden="true" className="text-6xl mb-4 select-none">
