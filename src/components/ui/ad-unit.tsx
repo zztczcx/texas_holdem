@@ -12,9 +12,10 @@ interface AdUnitProps {
   className?: string;
 }
 
-export function AdUnit({ className }: AdUnitProps): React.ReactElement | null {
+export function AdUnit({ className }: AdUnitProps): React.ReactElement {
   const insRef = useRef<HTMLModElement>(null);
-  const [hidden, setHidden] = useState(false);
+  // Start hidden — only reveal once AdSense confirms the slot is filled
+  const [filled, setFilled] = useState(false);
 
   useEffect(() => {
     const ins = insRef.current;
@@ -23,23 +24,21 @@ export function AdUnit({ className }: AdUnitProps): React.ReactElement | null {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch {
-      // ad blocker or script not loaded — observer will never fire; leave visible
+      // ad blocker or script not loaded — observer will never fire; stays hidden
     }
 
     // AdSense sets data-ad-status="filled" or "unfilled" after the auction
     const observer = new MutationObserver(() => {
       const status = ins.getAttribute('data-ad-status');
-      if (status === 'unfilled') setHidden(true);
+      if (status === 'filled') setFilled(true);
     });
 
     observer.observe(ins, { attributes: true, attributeFilter: ['data-ad-status'] });
     return () => observer.disconnect();
   }, []);
 
-  if (hidden) return null;
-
   return (
-    <div className={className}>
+    <div className={filled ? className : undefined} style={filled ? undefined : { display: 'none' }}>
       <ins
         ref={insRef}
         className="adsbygoogle"
