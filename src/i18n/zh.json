@@ -40,6 +40,7 @@
     "joinButton": "加入牌桌",
     "enterName": "请输入您的姓名。",
     "enterCode": "请输入桌号。",
+    "tableNotFound": "未找到代码为 \"{code}\" 的牌桌，请检查后重试。",
     "createModalTitle": "创建牌桌",
     "enterYourName": "输入您的姓名",
     "maxPlayers": "最多玩家",

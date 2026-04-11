@@ -65,11 +65,16 @@ export function LobbyActions(): React.ReactElement {
     }
     setJoinError(null);
     startTransition(async () => {
-      const result = await joinTable(joinTableId.trim(), joinName.trim());
+      const code = joinTableId.trim();
+      const result = await joinTable(code, joinName.trim());
       if (result.error) {
-        setJoinError(result.error);
+        if (result.error === 'Table not found.') {
+          setJoinError(t.lobby.tableNotFound.replace('{code}', code));
+        } else {
+          setJoinError(result.error);
+        }
       } else {
-        router.push(`/table/${joinTableId.trim()}`);
+        router.push(`/table/${code}`);
       }
     });
   }

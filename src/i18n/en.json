@@ -40,6 +40,7 @@
     "joinButton": "Join Table",
     "enterName": "Please enter your name.",
     "enterCode": "Please enter a table code.",
+    "tableNotFound": "No table found with code \"{code}\". Check the code and try again.",
     "createModalTitle": "Create Table",
     "enterYourName": "Enter your name",
     "maxPlayers": "Max Players",
