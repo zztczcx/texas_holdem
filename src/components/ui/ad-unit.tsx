@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -12,18 +12,37 @@ interface AdUnitProps {
   className?: string;
 }
 
-export function AdUnit({ className }: AdUnitProps): React.ReactElement {
+export function AdUnit({ className }: AdUnitProps): React.ReactElement | null {
+  const insRef = useRef<HTMLModElement>(null);
+  const [hidden, setHidden] = useState(false);
+
   useEffect(() => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch {
-      // ad blocker or script not loaded — fail silently
+      setHidden(true);
+      return;
     }
+
+    const ins = insRef.current;
+    if (!ins) return;
+
+    // AdSense sets data-ad-status="filled" or "unfilled" after the auction
+    const observer = new MutationObserver(() => {
+      const status = ins.getAttribute('data-ad-status');
+      if (status === 'unfilled') setHidden(true);
+    });
+
+    observer.observe(ins, { attributes: true, attributeFilter: ['data-ad-status'] });
+    return () => observer.disconnect();
   }, []);
+
+  if (hidden) return null;
 
   return (
     <div className={className}>
       <ins
+        ref={insRef}
         className="adsbygoogle"
         style={{ display: 'block' }}
         data-ad-client="ca-pub-2430817783068325"
