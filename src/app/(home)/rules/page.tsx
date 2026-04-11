@@ -108,6 +108,11 @@ const EN_CONTENT: PageContent = {
           desc: "Pass the action to the next player. Only available when nobody has bet yet this round.",
         },
         {
+          label: 'Bet',
+          tone: 'raise',
+          desc: 'Place the first bet of a round (when no one has bet yet). Others must call, raise, or fold.',
+        },
+        {
           label: 'Call',
           tone: 'call',
           desc: 'Match the current highest bet to stay in the hand.',
@@ -218,6 +223,11 @@ const ZH_CONTENT: PageContent = {
           label: '过牌（Check）',
           tone: 'neutral',
           desc: '不下注，将操作权传给下一位玩家。仅在本轮无人下注时可用。',
+        },
+        {
+          label: '下注（Bet）',
+          tone: 'raise',
+          desc: '在本轮第一个下注（此前无人下注时）。其他玩家须跟注、加注或弃牌。',
         },
         {
           label: '跟注（Call）',

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
+import { RaiseSlider } from '@/components/game/raise-slider';
 import { useI18n } from '@/components/layout/i18n-provider';
 import type { ActionType, GameState, Player, GameSettings } from '@/types/game';
 import { getValidActions, getCallAmount } from '@/lib/game/betting';
@@ -36,7 +37,6 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
   const minRaise = raiseAction?.minAmount ?? 0;
   const maxRaise = raiseAction?.maxAmount ?? player.chips;
   const raiseVerb = gameState.currentBet === 0 ? t.actionBar.bet : t.actionBar.raise;
-  const presetOptions = canRaise ? buildPresetOptions(gameState.pot, minRaise, maxRaise) : [];
 
   if (validActions.length === 0) return null;
 
@@ -50,11 +50,6 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
   function handleRaiseButtonClick(): void {
     if (!canRaise) return;
     setIsRaisePanelOpen((open) => !open);
-  }
-
-  function handlePresetClick(amount: number): void {
-    const clamped = clamp(amount, minRaise, maxRaise);
-    dispatch(clamped >= maxRaise ? 'allIn' : 'raise', clamped);
   }
 
   return (
@@ -77,24 +72,13 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
               {t.actionBar.selectBetSize}
             </p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {presetOptions.map((option) => (
-                <button
-                  key={`${option.label}-${option.amount}`}
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => handlePresetClick(option.amount)}
-                  className={cn(
-                    'shrink-0 rounded-full border px-3 py-2 text-xs font-semibold tracking-[0.08em] transition-colors',
-                    'border-[var(--color-border)] bg-[var(--color-border-muted)]/70 text-[var(--color-text-muted)]',
-                    'hover:border-[var(--color-gold)]/40 hover:bg-[var(--color-gold)]/12 hover:text-[var(--color-gold)]',
-                    'disabled:opacity-50 disabled:cursor-not-allowed',
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <RaiseSlider
+              minRaise={minRaise}
+              maxRaise={maxRaise}
+              callAmount={callAmount}
+              isLoading={isPending}
+              onAction={(type, amount) => dispatch(type, amount)}
+            />
           </div>
         </div>
       </div>
@@ -177,40 +161,6 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
       )}
     </div>
   );
-}
-
-interface PresetOption {
-  label: string;
-  amount: number;
-}
-
-function buildPresetOptions(pot: number, minRaise: number, maxRaise: number): readonly PresetOption[] {
-  // Pot-relative presets — professional poker sizing conventions
-  const rawOptions: readonly PresetOption[] = [
-    { label: 'Min', amount: minRaise },
-    { label: '1/4 Pot', amount: Math.max(1, Math.round(pot * 0.25)) },
-    { label: '1/3 Pot', amount: Math.max(1, Math.round(pot / 3)) },
-    { label: '1/2 Pot', amount: Math.max(1, Math.round(pot / 2)) },
-    { label: '2/3 Pot', amount: Math.max(1, Math.round(pot * 0.667)) },
-    { label: 'Pot', amount: Math.max(1, Math.round(pot)) },
-    { label: '2× Pot', amount: Math.max(1, Math.round(pot * 2)) },
-  ];
-
-  const seenAmounts = new Set<number>();
-
-  return rawOptions.flatMap((option) => {
-    const amount = clamp(option.amount, minRaise, maxRaise);
-    if (amount < minRaise || amount > maxRaise || seenAmounts.has(amount)) {
-      return [];
-    }
-
-    seenAmounts.add(amount);
-    return [{ ...option, amount }];
-  });
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 function formatCurrency(amount: number): string {
