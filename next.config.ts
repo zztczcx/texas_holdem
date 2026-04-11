@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.pusher.com https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.pusher.com https://va.vercel-scripts.com https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://www.googletagservices.com https://adservice.google.com https://*.adtrafficquality.google;
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: blob: https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com;
   font-src 'self';
