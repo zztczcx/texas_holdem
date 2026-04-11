@@ -3,9 +3,19 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ActionBar } from './action-bar';
+import { I18nProvider } from '@/components/layout/i18n-provider';
+import enDict from '@/i18n/en.json';
 import type { Player, GameState, GameSettings } from '@/types/game';
 
 afterEach(() => cleanup());
+
+function renderWithI18n(ui: React.ReactElement) {
+  return render(
+    <I18nProvider locale="en" dict={enDict}>
+      {ui}
+    </I18nProvider>,
+  );
+}
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,7 +77,7 @@ function makePreFlopState(
 describe('ActionBar', () => {
   it('renders Fold button when there are valid actions', () => {
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(20, { p2: 10 })}
@@ -80,7 +90,7 @@ describe('ActionBar', () => {
 
   it('renders Check and Bet when there is no prior bet this street', () => {
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(0, {})}
@@ -94,7 +104,7 @@ describe('ActionBar', () => {
 
   it('renders Call button with amount when there is a bet to call', () => {
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -107,7 +117,7 @@ describe('ActionBar', () => {
 
   it('renders All-in button with the player stack amount', () => {
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer({ chips: 1000 })}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -115,13 +125,13 @@ describe('ActionBar', () => {
         onAction={onAction}
       />,
     );
-    expect(screen.getByRole('button', { name: /all-in \$1,000/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /all in \$1,000/i })).toBeDefined();
   });
 
   it('calls onAction with "fold" when Fold is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -136,7 +146,7 @@ describe('ActionBar', () => {
   it('calls onAction with "check" when Check is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(0, {})}
@@ -151,7 +161,7 @@ describe('ActionBar', () => {
   it('opens the preset row when Raise is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -168,7 +178,7 @@ describe('ActionBar', () => {
   it('dispatches raise immediately when a preset chip is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -185,7 +195,7 @@ describe('ActionBar', () => {
   it('hides the preset row when Cancel is clicked', async () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer()}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -202,7 +212,7 @@ describe('ActionBar', () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
     // currentBet=20, player has bet 0 → callAmount = 20 - 0 = 20
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer({ chips: 500 })}
         gameState={makePreFlopState(20, { p2: 20 })}
@@ -218,7 +228,7 @@ describe('ActionBar', () => {
     const user = userEvent.setup();
     const onAction = vi.fn().mockResolvedValue(undefined);
     // currentBet=20, player already bet 10 → callAmount = 20 - 10 = 10
-    render(
+    renderWithI18n(
       <ActionBar
         player={makePlayer({ chips: 500 })}
         gameState={makePreFlopState(20, { p1: 10, p2: 20 })}

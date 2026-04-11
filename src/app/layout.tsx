@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/react';
+import { I18nProvider } from '@/components/layout/i18n-provider';
+import { getLocale, getDictionary } from '@/i18n/dictionaries';
 import './globals.css';
 
 const SITE_URL = 'https://airtexas.club';
@@ -42,15 +44,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}): React.ReactElement {
+}): Promise<React.ReactElement> {
+  const locale = await getLocale();
+  const dict = await getDictionary(locale);
   return (
-    <html lang="en" className="min-h-dvh">
+    <html lang={locale} className="min-h-dvh">
       <body className="min-h-dvh flex flex-col antialiased overflow-x-hidden">
-        {children}
+        <I18nProvider locale={locale} dict={dict}>
+          {children}
+        </I18nProvider>
         <Analytics />
       </body>
     </html>

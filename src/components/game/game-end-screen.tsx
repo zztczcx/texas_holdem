@@ -1,9 +1,12 @@
+'use client';
+
 import { cn } from '@/lib/utils/cn';
 import type { Card, Player } from '@/types/game';
 import { ChipStack } from '@/components/game/chip-stack';
 import { PlayingCard } from '@/components/game/playing-card';
 import { CardBack } from '@/components/game/card-back';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/components/layout/i18n-provider';
 import Link from 'next/link';
 
 const AVATAR_ANIMALS = ['🦊', '🐻', '🐯', '🦁', '🐼', '🐺', '🦝', '🦅', '🦉'] as const;
@@ -35,6 +38,7 @@ export interface GameEndScreenProps {
  */
 export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState, className }: GameEndScreenProps): React.ReactElement {
   const sorted = Object.values(players).sort((a, b) => b.chips - a.chips);
+  const { t } = useI18n();
 
   return (
     <div
@@ -58,13 +62,13 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
         {/* Header */}
         <div className="text-center">
           <p aria-hidden="true" className="text-4xl mb-2">🏆</p>
-          <h2 className="text-2xl font-bold text-[var(--color-gold)]">Game Over</h2>
+          <h2 className="text-2xl font-bold text-[var(--color-gold)]">{t.gameEnd.gameOver}</h2>
           {winnerPlayerId && players[winnerPlayerId] && (
             <p className="text-[var(--color-text-muted)] mt-1">
               <span className="font-semibold text-[var(--color-text-primary)]">
                 {players[winnerPlayerId].name}
               </span>{' '}
-              wins!
+              {t.gameEnd.wins}
             </p>
           )}
         </div>
@@ -76,7 +80,7 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
               id="cards-heading"
               className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
             >
-              Final Board
+              {t.gameEnd.finalBoard}
             </h3>
             {/* Community cards */}
             <div className="flex flex-wrap gap-1.5 justify-center mb-4">
@@ -106,7 +110,7 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
                       }
                     </div>
                     {player.id === winnerPlayerId && (
-                      <span className="text-xs font-semibold text-[var(--color-gold)] ml-auto">👑 Winner</span>
+                      <span className="text-xs font-semibold text-[var(--color-gold)] ml-auto">👑 {t.gameEnd.winner}</span>
                     )}
                   </div>
                 );
@@ -121,7 +125,7 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
             id="standings-heading"
             className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
           >
-            Final Standings
+            {t.gameEnd.finalStandings}
           </h3>
           <ol className="flex flex-col gap-2">
             {sorted.map((player, i) => {
@@ -142,7 +146,7 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
                     {player.name}
                   </span>
                   {player.id === winnerPlayerId && (
-                    <Badge variant="gold">Winner</Badge>
+                    <Badge variant="gold">{t.gameEnd.winner}</Badge>
                   )}
                   <ChipStack amount={player.chips} inline />
                 </li>
@@ -157,13 +161,13 @@ export function GameEndScreen({ players, winnerPlayerId, tableId, finalGameState
             href="/"
             className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold bg-[var(--color-border-muted)] text-[var(--color-text-primary)] hover:bg-[var(--color-border)] transition-colors"
           >
-            Home
+            {t.gameEnd.home}
           </Link>
           <Link
             href={`/table/${tableId}?reset=1`}
             className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold bg-[var(--color-felt)] text-[var(--color-text-primary)] hover:bg-[#245a40] transition-colors"
           >
-            Play Again
+            {t.gameEnd.playAgain}
           </Link>
         </div>
       </div>

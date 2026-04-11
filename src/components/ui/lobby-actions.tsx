@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Slider } from '@/components/ui/slider';
 import { createTable, joinTable } from '@/app/actions';
+import { useI18n } from '@/components/layout/i18n-provider';
 import type { GameSettings } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -24,6 +25,7 @@ const DEFAULT_SETTINGS: GameSettings = {
 export function LobbyActions(): React.ReactElement {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { t } = useI18n();
 
   // Create table modal
   const [createOpen, setCreateOpen] = useState(false);
@@ -38,7 +40,7 @@ export function LobbyActions(): React.ReactElement {
 
   function handleCreate(): void {
     if (!hostName.trim()) {
-      setCreateError('Please enter your name.');
+      setCreateError(t.lobby.enterName);
       return;
     }
     setCreateError(null);
@@ -54,11 +56,11 @@ export function LobbyActions(): React.ReactElement {
 
   function handleJoin(): void {
     if (!joinTableId.trim()) {
-      setJoinError('Please enter a table code.');
+      setJoinError(t.lobby.enterCode);
       return;
     }
     if (!joinName.trim()) {
-      setJoinError('Please enter your name.');
+      setJoinError(t.lobby.enterName);
       return;
     }
     setJoinError(null);
@@ -82,7 +84,7 @@ export function LobbyActions(): React.ReactElement {
           onClick={() => setCreateOpen(true)}
           aria-haspopup="dialog"
         >
-          ♠ Create Table
+          {t.lobby.createButton}
         </Button>
       </div>
 
@@ -90,8 +92,8 @@ export function LobbyActions(): React.ReactElement {
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-center">
         <Input
           id="join-table-id"
-          label="Table Code"
-          placeholder="ABC123"
+          label={t.lobby.tableCode}
+          placeholder={t.lobby.tableCodePlaceholder}
           value={joinTableId}
           onChange={(e) => setJoinTableId(e.target.value.toUpperCase())}
           className="w-full sm:w-40"
@@ -100,8 +102,8 @@ export function LobbyActions(): React.ReactElement {
         />
         <Input
           id="join-name"
-          label="Your Name"
-          placeholder="Player name"
+          label={t.lobby.yourName}
+          placeholder={t.lobby.playerNamePlaceholder}
           value={joinName}
           onChange={(e) => setJoinName(e.target.value)}
           className="w-full sm:w-44"
@@ -114,7 +116,7 @@ export function LobbyActions(): React.ReactElement {
           onClick={handleJoin}
           className="mt-1 sm:mt-0 self-end"
         >
-          Join Table
+          {t.lobby.joinButton}
         </Button>
       </div>
       {joinError && (
@@ -130,12 +132,12 @@ export function LobbyActions(): React.ReactElement {
           setCreateOpen(false);
           setCreateError(null);
         }}
-        title="Create Table"
+        title={t.lobby.createModalTitle}
       >
         <div className="flex flex-col gap-4">
           <Input
-            label="Your Name"
-            placeholder="Enter your name"
+            label={t.lobby.yourName}
+            placeholder={t.lobby.enterYourName}
             value={hostName}
             onChange={(e) => setHostName(e.target.value)}
             maxLength={20}
@@ -143,7 +145,7 @@ export function LobbyActions(): React.ReactElement {
           />
 
           <Slider
-            label="Max Players"
+            label={t.lobby.maxPlayers}
             value={settings.maxPlayers}
             min={2}
             max={9}
@@ -152,7 +154,7 @@ export function LobbyActions(): React.ReactElement {
           />
 
           <Slider
-            label="Starting Chips"
+            label={t.lobby.startingChips}
             value={settings.startingChips}
             min={100}
             max={10000}
@@ -162,7 +164,7 @@ export function LobbyActions(): React.ReactElement {
           />
 
           <Slider
-            label="Small Blind"
+            label={t.lobby.smallBlind}
             value={settings.smallBlind}
             min={5}
             max={500}
@@ -206,7 +208,7 @@ export function LobbyActions(): React.ReactElement {
                 setCreateError(null);
               }}
             >
-              Cancel
+              {t.lobby.cancel}
             </Button>
             <Button
               variant="gold"
@@ -214,7 +216,7 @@ export function LobbyActions(): React.ReactElement {
               isLoading={isPending}
               onClick={handleCreate}
             >
-              Create
+              {t.lobby.createConfirm}
             </Button>
           </div>
         </div>

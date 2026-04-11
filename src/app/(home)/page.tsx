@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { PageContainer } from '@/components/layout/page-container';
 import { LobbyActions } from '@/components/ui/lobby-actions';
+import { getLocale, getDictionary } from '@/i18n/dictionaries';
 
 export const metadata: Metadata = {
   title: "Texas Hold'em — Play Poker with Friends",
@@ -8,7 +9,17 @@ export const metadata: Metadata = {
     "Host or join a Texas Hold'em table. Share a link and play with friends online — no account required.",
 };
 
-export default function HomePage(): React.ReactElement {
+export default async function HomePage(): Promise<React.ReactElement> {
+  const locale = await getLocale();
+  const t = await getDictionary(locale);
+  const f = t.home.features;
+
+  const features = [
+    { icon: '⚡', title: f.realtime.title, desc: f.realtime.desc },
+    { icon: '🔒', title: f.private.title, desc: f.private.desc },
+    { icon: '🃏', title: f.rules.title, desc: f.rules.desc },
+  ];
+
   return (
     <PageContainer className="flex flex-col items-center justify-center px-4 py-16 md:py-24">
       {/* Hero */}
@@ -20,13 +31,12 @@ export default function HomePage(): React.ReactElement {
           id="hero-heading"
           className="text-4xl md:text-5xl font-bold text-[var(--color-text-primary)] mb-4 leading-tight"
         >
-          Play Texas Hold&apos;em
+          {t.home.hero.title}
           <br />
-          <span className="text-[var(--color-gold)]">with Friends</span>
+          <span className="text-[var(--color-gold)]">{t.home.hero.subtitle}</span>
         </h1>
         <p className="text-[var(--color-text-muted)] text-lg max-w-md mx-auto leading-relaxed">
-          Create a private table and share the link. No account required — just pick a
-          name and start playing.
+          {t.home.hero.body}
         </p>
       </section>
 
@@ -44,11 +54,7 @@ export default function HomePage(): React.ReactElement {
         className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl text-center"
       >
         <h2 id="features-heading" className="sr-only">Features</h2>
-        {[
-          { icon: '⚡', title: 'Real-Time', desc: 'Live updates via WebSockets — see every action instantly.' },
-          { icon: '🔒', title: 'Private Tables', desc: 'Share a 6-character code. Only invited players join.' },
-          { icon: '🃏', title: 'Full Rules', desc: 'Blinds, side pots, all-in, buy-backs — complete Hold\'em.' },
-        ].map(({ icon, title, desc }) => (
+        {features.map(({ icon, title, desc }) => (
           <article
             key={title}
             className="rounded-2xl p-5 bg-[var(--color-surface)] border border-[var(--color-border-muted)]"

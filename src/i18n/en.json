@@ -1,0 +1,100 @@
+{
+  "header": {
+    "title": "Hold'em",
+    "nav": { "home": "Home" }
+  },
+  "footer": {
+    "copyright": "© 2026 CodeBrewServices, Pty Ltd. Based in Melbourne."
+  },
+  "home": {
+    "hero": {
+      "title": "Play Texas Hold\u2019em",
+      "subtitle": "with Friends",
+      "body": "Create a private table and share the link. No account required \u2014 just pick a name and start playing."
+    },
+    "features": {
+      "realtime": {
+        "title": "Real-Time",
+        "desc": "Live updates via WebSockets \u2014 see every action instantly."
+      },
+      "private": {
+        "title": "Private Tables",
+        "desc": "Share a 6-character code. Only invited players join."
+      },
+      "rules": {
+        "title": "Full Rules",
+        "desc": "Blinds, side pots, all-in, buy-backs \u2014 complete Hold\u2019em."
+      }
+    }
+  },
+  "lobby": {
+    "createButton": "\u2660 Create Table",
+    "tableCode": "Table Code",
+    "tableCodePlaceholder": "ABC123",
+    "yourName": "Your Name",
+    "playerNamePlaceholder": "Player name",
+    "joinButton": "Join Table",
+    "enterName": "Please enter your name.",
+    "enterCode": "Please enter a table code.",
+    "createModalTitle": "Create Table",
+    "enterYourName": "Enter your name",
+    "maxPlayers": "Max Players",
+    "startingChips": "Starting Chips",
+    "smallBlind": "Small Blind",
+    "allowBuyBack": "Allow buy-backs",
+    "createConfirm": "Create Table",
+    "cancel": "Cancel"
+  },
+  "tableLobby": {
+    "table": "Table",
+    "waitingForPlayers": "Waiting for players\u2026",
+    "startGame": "Start Game",
+    "resetGame": "Reset Game",
+    "players": "Players",
+    "settings": "Settings",
+    "inviteFriends": "Invite Friends",
+    "copyLink": "\ud83d\udccb Copy Link",
+    "shareWhatsApp": "\ud83d\udcac Share via WhatsApp",
+    "joinThisTable": "Join this table",
+    "enterYourName": "Enter your name",
+    "join": "Join",
+    "spectating": "You are spectating this table.",
+    "host": "Host",
+    "playing": "Playing",
+    "kicked": "Kicked",
+    "startingChips": "Starting chips",
+    "blinds": "Blinds",
+    "maxPlayers": "Max players",
+    "buyBack": "Buy-back",
+    "gameEnded": "Game over — the host can reset for a new game",
+    "waitingShare": "Waiting for players — share the code or link below",
+    "needMorePlayers": "Need at least 2 players to start.",
+    "waitingForHost": "Waiting for the host to start the game\u2026",
+    "noPlayersYet": "No players yet",
+    "you": "(you)",
+    "chips": "chips",
+    "yourName": "Your Name",
+    "resetAndPlay": "Reset & Play Again",
+    "gameOverResetDesc": "Game over! Reset all chip stacks to {chips} and play again.",
+    "allowed": "Allowed",
+    "disabled": "Disabled"
+  },
+  "actionBar": {
+    "fold": "Fold",
+    "check": "Check",
+    "call": "Call",
+    "raise": "Raise",
+    "allIn": "All In",
+    "bet": "Bet",
+    "selectBetSize": "Select bet size"
+  },
+  "gameEnd": {
+    "gameOver": "Game Over",
+    "wins": "wins!",
+    "finalBoard": "Final Board",
+    "finalStandings": "Final Standings",
+    "winner": "Winner",
+    "home": "Home",
+    "playAgain": "Play Again"
+  }
+}

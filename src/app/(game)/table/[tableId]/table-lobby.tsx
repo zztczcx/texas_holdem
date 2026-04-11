@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { joinTable, startGame, resetGame } from '@/app/actions';
 import { useTable } from '@/hooks/use-table';
+import { useI18n } from '@/components/layout/i18n-provider';
 
 interface TableLobbyProps {
   table: Table;
@@ -36,6 +37,8 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
   const [playerName, setPlayerName] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
 
+  const { t } = useI18n();
+
   const isHost = playerId === liveTable.hostPlayerId;
   const isPlayer = playerId !== null;
   const players = Object.values(liveTable.players);
@@ -45,7 +48,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
 
   function handleJoin(): void {
     if (!playerName.trim()) {
-      setJoinError('Please enter your name.');
+      setJoinError(t.lobby.enterName);
       return;
     }
     setJoinError(null);
@@ -97,19 +100,19 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
         <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-              Table{' '}
+              {t.tableLobby.table}{' '}
               <span className="text-[var(--color-gold)] font-mono tracking-wider">
                 {liveTable.id}
               </span>
             </h1>
             <p className="text-sm text-[var(--color-text-muted)] mt-1">
               {liveTable.state === 'ended'
-                ? 'Game over — the host can reset for a new game'
-                : 'Waiting for players \u2014 share the code or link below'}
+                ? t.tableLobby.gameEnded
+                : t.tableLobby.waitingShare}
             </p>
           </div>
           <Badge variant="muted" className="self-start sm:self-auto">
-            {players.length} / {liveTable.settings.maxPlayers} players
+            {players.length} / {liveTable.settings.maxPlayers} {t.tableLobby.players}
           </Badge>
         </div>
 
@@ -123,7 +126,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
               id="players-heading"
               className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4"
             >
-              Players
+              {t.tableLobby.players}
             </h2>
             <ul className="flex flex-col gap-3">
               {players.map((p) => (
@@ -144,21 +147,21 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                         {p.name}
                       </span>
                       {p.id === liveTable.hostPlayerId && (
-                        <span className="ml-2 text-xs text-[var(--color-gold)]">Host</span>
+                        <span className="ml-2 text-xs text-[var(--color-gold)]">{t.tableLobby.host}</span>
                       )}
                       {p.id === playerId && (
-                        <span className="ml-2 text-xs text-[var(--color-text-muted)]">(you)</span>
+                        <span className="ml-2 text-xs text-[var(--color-text-muted)]">{t.tableLobby.you}</span>
                       )}
                     </div>
                   </div>
                   <span className="tabular-nums text-sm text-[var(--color-text-muted)]">
-                    {p.chips.toLocaleString()} chips
+                    {p.chips.toLocaleString()} {t.tableLobby.chips}
                   </span>
                 </li>
               ))}
               {players.length === 0 && (
                 <li className="text-sm text-[var(--color-text-muted)] italic">
-                  No players yet
+                  {t.tableLobby.noPlayersYet}
                 </li>
               )}
             </ul>
@@ -173,11 +176,11 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                   disabled={players.length < 2}
                   onClick={handleStart}
                 >
-                  Start Game
+                  {t.tableLobby.startGame}
                 </Button>
                 {players.length < 2 && (
                   <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-                    Need at least 2 players to start.
+                    {t.tableLobby.needMorePlayers}
                   </p>
                 )}
               </div>
@@ -187,7 +190,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
             {isHost && liveTable.state === 'ended' && (
               <div className="mt-6 pt-4 border-t border-[var(--color-border-muted)]">
                 <p className="mb-3 text-sm text-[var(--color-text-muted)]">
-                  Game over! Reset all chip stacks to {liveTable.settings.startingChips.toLocaleString()} and play again.
+                  {t.tableLobby.gameOverResetDesc.replace('{chips}', liveTable.settings.startingChips.toLocaleString())}
                 </p>
                 <Button
                   variant="gold"
@@ -195,7 +198,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                   isLoading={isPending}
                   onClick={handleReset}
                 >
-                  Reset &amp; Play Again
+                  {t.tableLobby.resetAndPlay}
                 </Button>
               </div>
             )}
@@ -203,7 +206,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
             {/* Non-host waiting message */}
             {isPlayer && !isHost && liveTable.state === 'waiting' && (
               <p className="mt-6 text-sm text-[var(--color-text-muted)] italic">
-                Waiting for the host to start the game…
+                {t.tableLobby.waitingForHost}
               </p>
             )}
           </section>
@@ -219,7 +222,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                 id="share-heading"
                 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
               >
-                Invite Friends
+                {t.tableLobby.inviteFriends}
               </h2>
               {/* Table code */}
               <p className="text-2xl font-bold font-mono tracking-widest text-[var(--color-gold)] mb-2">
@@ -231,7 +234,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
               </p>
               <div className="flex flex-col gap-2">
                 <Button variant="secondary" size="sm" onClick={handleCopyLink}>
-                  📋 Copy Link
+                  {t.tableLobby.copyLink}
                 </Button>
                 {/* WhatsApp share */}
                 <a
@@ -241,7 +244,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-border-muted)] bg-[#25d366]/10 px-3 py-2 text-sm font-medium text-[#25d366] hover:bg-[#25d366]/20 transition-colors"
                   aria-label="Share via WhatsApp"
                 >
-                  <span aria-hidden="true">💬</span> Share via WhatsApp
+                  <span aria-hidden="true">💬</span> {t.tableLobby.shareWhatsApp}
                 </a>
               </div>
             </section>
@@ -256,12 +259,12 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                   id="join-heading"
                   className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
                 >
-                  Join Table
+                  {t.tableLobby.joinThisTable}
                 </h2>
                 <div className="flex flex-col gap-3">
                   <Input
-                    label="Your Name"
-                    placeholder="Enter your name"
+                    label={t.tableLobby.yourName}
+                    placeholder={t.tableLobby.enterYourName}
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
@@ -274,7 +277,7 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                     isLoading={isPending}
                     onClick={handleJoin}
                   >
-                    Join
+                    {t.tableLobby.join}
                   </Button>
                 </div>
               </section>
@@ -289,14 +292,14 @@ export function TableLobby({ table: initialTable, currentPlayerId: initialPlayer
                 id="settings-heading"
                 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3"
               >
-                Settings
+                {t.tableLobby.settings}
               </h2>
               <dl className="flex flex-col gap-2 text-sm">
                 {[
-                  ['Starting Chips', liveTable.settings.startingChips.toLocaleString()],
-                  ['Blinds', `${liveTable.settings.smallBlind} / ${liveTable.settings.bigBlind}`],
-                  ['Max Players', String(liveTable.settings.maxPlayers)],
-                  ['Buy-backs', liveTable.settings.allowBuyBack ? 'Allowed' : 'Disabled'],
+                  [t.tableLobby.startingChips, liveTable.settings.startingChips.toLocaleString()],
+                  [t.tableLobby.blinds, `${liveTable.settings.smallBlind} / ${liveTable.settings.bigBlind}`],
+                  [t.tableLobby.maxPlayers, String(liveTable.settings.maxPlayers)],
+                  [t.tableLobby.buyBack, liveTable.settings.allowBuyBack ? t.tableLobby.allowed : t.tableLobby.disabled],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-2">
                     <dt className="text-[var(--color-text-muted)]">{label}</dt>

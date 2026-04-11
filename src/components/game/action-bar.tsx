@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/components/layout/i18n-provider';
 import type { ActionType, GameState, Player, GameSettings } from '@/types/game';
 import { getValidActions, getCallAmount } from '@/lib/game/betting';
 
@@ -21,6 +22,7 @@ export interface ActionBarProps {
 export function ActionBar({ player, gameState, settings, onAction, className }: ActionBarProps): React.ReactElement | null {
   const [isPending, startTransition] = useTransition();
   const [isRaisePanelOpen, setIsRaisePanelOpen] = useState(false);
+  const { t } = useI18n();
 
   const stateWithDeck = { ...gameState, deck: [] as const } as GameState;
   const validActions = getValidActions(stateWithDeck, player, settings);
@@ -33,7 +35,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
   const canAllIn = validActions.some((action) => action.type === 'allIn');
   const minRaise = raiseAction?.minAmount ?? 0;
   const maxRaise = raiseAction?.maxAmount ?? player.chips;
-  const raiseVerb = gameState.currentBet === 0 ? 'Bet' : 'Raise';
+  const raiseVerb = gameState.currentBet === 0 ? t.actionBar.bet : t.actionBar.raise;
   const presetOptions = canRaise ? buildPresetOptions(gameState.pot, minRaise, maxRaise) : [];
 
   if (validActions.length === 0) return null;
@@ -73,7 +75,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
         <div className="overflow-hidden">
           <div className="rounded-[20px] border border-[var(--color-border-muted)] bg-[var(--color-canvas)]/32 px-3 py-3">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-              Select bet size
+              {t.actionBar.selectBetSize}
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {presetOptions.map((option) => (
@@ -105,7 +107,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
           onClick={() => dispatch('fold')}
           className="w-full justify-center"
         >
-          Fold
+          {t.actionBar.fold}
         </Button>
 
         {canCheck ? (
@@ -116,7 +118,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             onClick={() => dispatch('check')}
             className="w-full justify-center"
           >
-            Check
+            {t.actionBar.check}
           </Button>
         ) : canCall ? (
           <Button
@@ -126,7 +128,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             onClick={() => dispatch('call', callAmount)}
             className="w-full justify-center"
           >
-            Call {formatCurrency(callAmount)}
+            {t.actionBar.call} {formatCurrency(callAmount)}
           </Button>
         ) : (
           <div aria-hidden="true" className="hidden sm:block" />
@@ -154,7 +156,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             onClick={() => dispatch('allIn')}
             className="w-full justify-center"
           >
-            All-in {formatCurrency(player.chips)}
+            {t.actionBar.allIn} {formatCurrency(player.chips)}
           </Button>
         ) : (
           <div aria-hidden="true" className="hidden sm:block" />
@@ -169,7 +171,7 @@ export function ActionBar({ player, gameState, settings, onAction, className }: 
             onClick={() => setIsRaisePanelOpen(false)}
             className="border-[var(--color-border)] bg-[var(--color-border-muted)]/70"
           >
-            Cancel
+            {t.lobby.cancel}
           </Button>
         </div>
       )}

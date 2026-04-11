@@ -1,0 +1,100 @@
+{
+  "header": {
+    "title": "Hold'em",
+    "nav": { "home": "\u9996\u9875" }
+  },
+  "footer": {
+    "copyright": "\u00a9 2026 CodeBrewServices, Pty Ltd. \u603b\u90e8\u4f4d\u4e8e\u58a8\u5c14\u672c\u3002"
+  },
+  "home": {
+    "hero": {
+      "title": "\u7545\u73a9\u5fb7\u5dde\u6251\u514b",
+      "subtitle": "\u4e0e\u597d\u53cb\u5bf9\u51b3",
+      "body": "\u521b\u5efa\u79c1\u4eba\u724c\u684c\u5e76\u5206\u4eab\u94fe\u63a5\u3002\u65e0\u9700\u6ce8\u518c\u2014\u2014\u8f93\u5165\u540d\u5b57\u5373\u53ef\u5f00\u59cb\u6e38\u620f\u3002"
+    },
+    "features": {
+      "realtime": {
+        "title": "\u5b9e\u65f6\u5bf9\u6218",
+        "desc": "\u901a\u8fc7 WebSocket \u5b9e\u65f6\u66f4\u65b0\u2014\u2014\u5373\u65f6\u770b\u5230\u6bcf\u4e00\u4e2a\u52a8\u4f5c\u3002"
+      },
+      "private": {
+        "title": "\u79c1\u4eba\u724c\u684c",
+        "desc": "\u5206\u4eab 6 \u4f4d\u684c\u53f7\uff0c\u4ec5\u53d7\u9080\u73a9\u5bb6\u53ef\u52a0\u5165\u3002"
+      },
+      "rules": {
+        "title": "\u5b8c\u6574\u89c4\u5219",
+        "desc": "\u5c0f\u76f2\u6ce8\u3001\u8fb9\u6c60\u3001\u5168\u538b\u3001\u56de\u8d2d\u2014\u2014\u5b8c\u6574\u5fb7\u5dde\u6251\u514b\u89c4\u5219\u3002"
+      }
+    }
+  },
+  "lobby": {
+    "createButton": "\u2660 \u521b\u5efa\u724c\u684c",
+    "tableCode": "\u684c\u53f7",
+    "tableCodePlaceholder": "ABC123",
+    "yourName": "\u60a8\u7684\u59d3\u540d",
+    "playerNamePlaceholder": "\u73a9\u5bb6\u59d3\u540d",
+    "joinButton": "\u52a0\u5165\u724c\u684c",
+    "enterName": "\u8bf7\u8f93\u5165\u60a8\u7684\u59d3\u540d\u3002",
+    "enterCode": "\u8bf7\u8f93\u5165\u684c\u53f7\u3002",
+    "createModalTitle": "\u521b\u5efa\u724c\u684c",
+    "enterYourName": "\u8f93\u5165\u60a8\u7684\u59d3\u540d",
+    "maxPlayers": "\u6700\u591a\u73a9\u5bb6",
+    "startingChips": "\u521d\u59cb\u7b39\u7801",
+    "smallBlind": "\u5c0f\u76f2\u6ce8",
+    "allowBuyBack": "\u5141\u8bb8\u56de\u8d2d",
+    "createConfirm": "\u521b\u5efa\u724c\u684c",
+    "cancel": "\u53d6\u6d88"
+  },
+  "tableLobby": {
+    "table": "\u724c\u684c",
+    "waitingForPlayers": "\u7b49\u5f85\u73a9\u5bb6\u52a0\u5165\u2026",
+    "startGame": "\u5f00\u59cb\u6e38\u620f",
+    "resetGame": "\u91cd\u7f6e\u6e38\u620f",
+    "players": "\u73a9\u5bb6",
+    "settings": "\u8bbe\u7f6e",
+    "inviteFriends": "\u9080\u8bf7\u597d\u53cb",
+    "copyLink": "\ud83d\udccb \u590d\u5236\u94fe\u63a5",
+    "shareWhatsApp": "\ud83d\udcac \u901a\u8fc7 WhatsApp \u5206\u4eab",
+    "joinThisTable": "\u52a0\u5165\u6b64\u684c",
+    "enterYourName": "\u8f93\u5165\u60a8\u7684\u59d3\u540d",
+    "join": "\u52a0\u5165",
+    "spectating": "\u60a8\u6b63\u5728\u89c2\u770b\u6b64\u724c\u684c\u3002",
+    "host": "\u623f\u4e3b",
+    "playing": "\u6e38\u620f\u4e2d",
+    "kicked": "\u5df2\u88ab\u8e22\u51fa",
+    "startingChips": "\u521d\u59cb\u7b39\u7801",
+    "blinds": "\u76f2\u6ce8",
+    "maxPlayers": "\u6700\u591a\u73a9\u5bb6",
+    "buyBack": "\u56de\u8d2d",
+    "gameEnded": "\u6e38\u620f\u7ed3\u675f \u2014 \u623f\u4e3b\u53ef\u4ee5\u91cd\u7f6e\u5f00\u59cb\u65b0\u6e38\u620f",
+    "waitingShare": "\u7b49\u5f85\u73a9\u5bb6\u52a0\u5165 \u2014 \u5206\u4eab\u4ee3\u7801\u6216\u94fe\u63a5",
+    "needMorePlayers": "\u81f3\u5c11\u9700\u89812\u540d\u73a9\u5bb6\u624d\u80fd\u5f00\u59cb\u3002",
+    "waitingForHost": "\u7b49\u5f85\u623f\u4e3b\u5f00\u59cb\u6e38\u620f\u2026",
+    "noPlayersYet": "\u6682\u65e0\u73a9\u5bb6",
+    "you": "\uff08\u4f60\uff09",
+    "chips": "\u7b39\u7801",
+    "yourName": "\u60a8\u7684\u540d\u5b57",
+    "resetAndPlay": "\u91cd\u7f6e\u5e76\u518d\u6765\u4e00\u5c40",
+    "gameOverResetDesc": "\u6e38\u620f\u7ed3\u675f\uff01\u5c06\u6240\u6709\u7b39\u7801\u91cd\u7f6e\u4e3a {chips} \u5e76\u518d\u6b21\u6e38\u73a9\u3002",
+    "allowed": "\u5141\u8bb8",
+    "disabled": "\u7981\u7528"
+  },
+  "actionBar": {
+    "fold": "\u5f03\u724c",
+    "check": "\u8fc7\u724c",
+    "call": "\u8ddf\u6ce8",
+    "raise": "\u52a0\u6ce8",
+    "allIn": "\u5168\u538b",
+    "bet": "\u4e0b\u6ce8",
+    "selectBetSize": "\u9009\u62e9\u4e0b\u6ce8\u91d1\u989d"
+  },
+  "gameEnd": {
+    "gameOver": "\u6e38\u620f\u7ed3\u675f",
+    "wins": "\u83b7\u80dc\uff01",
+    "finalBoard": "\u6700\u7ec8\u516c\u724c",
+    "finalStandings": "\u6700\u7ec8\u6392\u540d",
+    "winner": "\u83b7\u80dc\u8005",
+    "home": "\u9996\u9875",
+    "playAgain": "\u518d\u6765\u4e00\u5c40"
+  }
+}

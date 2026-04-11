@@ -1,7 +1,12 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
+import { LangSwitcher } from '@/components/layout/lang-switcher';
+import { getLocale, getDictionary } from '@/i18n/dictionaries';
 
-export function Header({ className }: { className?: string }): React.ReactElement {
+export async function Header({ className }: { className?: string }): Promise<React.ReactElement> {
+  const locale = await getLocale();
+  const t = await getDictionary(locale);
+
   return (
     <header
       className={cn(
@@ -18,16 +23,17 @@ export function Header({ className }: { className?: string }): React.ReactElemen
         aria-label="Texas Hold'em — Home"
       >
         <span aria-hidden="true" className="text-2xl">♠</span>
-        <span className="text-lg font-bold tracking-tight">Hold&apos;em</span>
+        <span className="text-lg font-bold tracking-tight">{t.header.title}</span>
       </Link>
 
-      <nav aria-label="Main navigation">
+      <nav aria-label="Main navigation" className="flex items-center gap-3">
         <Link
           href="/"
           className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
         >
-          Home
+          {t.header.nav.home}
         </Link>
+        <LangSwitcher />
       </nav>
     </header>
   );
